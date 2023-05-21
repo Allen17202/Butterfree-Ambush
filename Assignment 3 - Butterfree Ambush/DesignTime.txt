@@ -1,0 +1,21 @@
+Design Time
+User input control of game entity (i.e. paddle in Pong, aiming a turret, etc)
+Estimated: 4 hour Actual Time: 10 hours
+
+Bitmap background with entities moving around over it
+Estimated: 1 hour Actual Time: 4 hours
+
+Physics update of game entity, including acceleration (gravity would be good example)
+Estimated: 1 hour Actual Time: 3 hours
+
+Fixed point math
+Estimated: 3 hour Actual Time: 8 hours
+
+Collision detection between game entities
+Estimated: 8 hour Actual Time: 16 hours
+
+A score indicator as a 7-segment LED
+Estimated: 6 hour Actual Time: 14 hours
+
+Randomness
+Estimated: 1 hour Actual Time: 3 hours

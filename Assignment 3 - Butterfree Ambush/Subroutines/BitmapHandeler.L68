@@ -1,0 +1,211 @@
+00001000 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.16.01
+Created On: 10/21/2022 5:29:35 PM
+
+00000000                             1  *-----------------------------------------------------------
+00000000                             2  * Title      :
+00000000                             3  * Written by :
+00000000                             4  * Date       :
+00000000                             5  * Description:
+00000000                             6  *-----------------------------------------------------------
+00000000  =00000018                  7  PARAM_BITMAP_CHUNK_HEIGHT           EQU     24
+00000000  =00000014                  8  PARAM_BITMAP_CHUNK_WIDTH            EQU     20
+00000000  =00000010                  9  PARAM_BITMAP_CHUNK_TOPLEFT_X        EQU     16
+00000000  =0000000C                 10  PARAM_BITMAP_CHUNK_TOPLEFT_Y        EQU     12
+00000000  =00000008                 11  PARAM_SCREEN_LOCATION_TOPLEFT_X     EQU     8
+00000000  =00000004                 12  PARAM_SCREEN_LOCATION_TOPLEFT_Y     EQU     4
+00000000                            13  *----------------------------------------------------
+00000000                            14  *Constant values
+00000000                            15  *----------------------------------------------------
+00000000  =0000000A                 16  FILE_OFFSET_TO_PIXELARRAY_BYTES   EQU     10
+00000000  =00B7AAB4                 17  TRANSPARENT_REPLACEMENT_COLOR     EQU     $00B7AAB4                     ;Yellow color will act as the transparent color
+00000000                            18  *----------------------------------------------------
+00000000                            19  *Trap codes
+00000000                            20  *----------------------------------------------------
+00000000  =00000050                 21  PEN_COLOR_TRAP_CODE       EQU     80
+00000000  =00000052                 22  DRAW_PIXEL_TRAP_CODE      EQU     82
+00000000                            23  *----------------------------------------------------
+00000000                            24  LoadImageData
+00000000                            25          *Let's point the address register to the pixel array in the bmp image
+00000000  2248                      26          move.l  a0,a1
+00000002  D0FC 000A                 27          adda    #FILE_OFFSET_TO_PIXELARRAY_BYTES,a0         ;Add the static file offset to reach the pixel array       
+00000006  2E18                      28          move.l  (a0)+,d7                                    ;Move the offset address of the pixel array and increment the address register
+00000008  4EB9 0000003A             29          jsr     LittleToBigEndianLong                       ;Call the subroutine to convert the offset from Little Endian format to Big Endian format
+0000000E  D3C7                      30          add.l   d7,a1                                       ;Add the offset to the current address.
+00000010                            31                                                              ;a1 now holds the address to the pixel array
+00000010                            32                                                              
+00000010  2AC9                      33          move.l  a1,(a5)+                                    ;Store the address of the pixel array
+00000012                            34          
+00000012                            35          *a0 now points to the address where DIB's header size is placed
+00000012  2448                      36          move.l  a0,a2
+00000014  2E18                      37          move.l  (a0)+,d7                                    ;Move the DIB's header size and increment the address register
+00000016  4EB9 0000003A             38          jsr     LittleToBigEndianLong                       ;Call the subroutine to convert the size from Little Endian format to Big Endian format
+0000001C                            39                                                              ;d7 now holds the size of the DIB header                                   
+0000001C  D5C7                      40          add.l   d7,a2                                       ;Add the DIB header size to the current offset                                                            ;a2 will now hold the address to the color table
+0000001E                            41                                                              
+0000001E  2ACA                      42          move.l  a2,(a5)+                                    ;Store the address of the color table
+00000020                            43          
+00000020                            44          *a0 now points to the image's width
+00000020  2E18                      45          move.l  (a0)+,d7                                    ;Move the width of the image and increment the address register
+00000022  4EB9 0000003A             46          jsr     LittleToBigEndianLong                       ;Call the subroutine to convert the image width from Little Endian format to Big Endian format
+00000028  2A07                      47          move.l  d7,d5                                       ;d5 now holds the width of the image
+0000002A                            48          
+0000002A  2AC5                      49          move.l  d5,(a5)+                                    ;Store the width of the image
+0000002C                            50  
+0000002C                            51          
+0000002C                            52          *a0 now points to the image's height
+0000002C  2E10                      53          move.l  (a0),d7                                     ;Move the height of the image
+0000002E  4EB9 0000003A             54          jsr     LittleToBigEndianLong                       ;Call the subroutine to convert the image height from Little Endian format to Big Endian format
+00000034  2607                      55          move.l  d7,d3                                       ;d3 now holds the height of the image
+00000036                            56          
+00000036  2AC3                      57          move.l  d3,(a5)+                                    ;Store the height of the image
+00000038                            58                                      
+00000038  4E75                      59          rts
+0000003A                            60  
+0000003A                            61  *This subroutine converts a long from Little Endian format to Big Endian format(68000). It uses d7 register. 
+0000003A                            62  LittleToBigEndianLong
+0000003A  E05F                      63          ror.w   #$8,d7                  ;Rotate the word by 8 bits(less significant 16 bits)
+0000003C  4847                      64          swap    d7                      ;Swap higer word to lower word
+0000003E  E05F                      65          ror.w   #$8,d7                  ;Rotate the word by 8 bits(less significant 16 bits)
+00000040  4E75                      66          rts                             ;Return from subroutine
+00000042                            67  
+00000042                            68  *This subroutine displays the chunk of the 256 color bitmap image.
+00000042                            69  DisplayImage
+00000042  225D                      70          move.l  (a5)+,a1                                            ;Load the address of the pixel array
+00000044  245D                      71          move.l  (a5)+,a2                                            ;Load the address of the color table
+00000046  2A1D                      72          move.l  (a5)+,d5                                            ;Load the width of the image
+00000048  261D                      73          move.l  (a5)+,d3                                            ;Load the height of the image
+0000004A                            74                                                                                                                             
+0000004A                            75  
+0000004A  242F 0004                 76          move.l  PARAM_SCREEN_LOCATION_TOPLEFT_Y(sp),d2          
+0000004E  D4AF 0018                 77          add.l   PARAM_BITMAP_CHUNK_HEIGHT(sp),d2                    ;Y screen coordinate now points to the bottom left corner of the chunk image
+00000052                            78          
+00000052                            79                  
+00000052                            80          *Let's move the address of the pixel array to the bottom left corner of the chunk image        
+00000052                            81          *Moving the Y offset
+00000052  7C00                      82          move.l  #0,d6                                               ;Use data register as a loop counter
+00000054  2E03                      83          move.l  d3,d7                                               ;Move the height of the image
+00000056  9EAF 000C                 84          sub.l   PARAM_BITMAP_CHUNK_TOPLEFT_Y(sp),d7                 ;Subtract the chunk's Y offset
+0000005A  9EAF 0018                 85          sub.l   PARAM_BITMAP_CHUNK_HEIGHT(sp),d7                    ;Subtract the chunk height
+0000005E                            86           
+0000005E  BC87                      87          cmp.l   d7,d6                                               ;If the height of the chunk image if greater than or equal to the image, then don't loop
+00000060  6C00 000A                 88          bge     DontLoop 
+00000064                            89           
+00000064                            90          *We will now get the number of times to increment the Y offset
+00000064                            91  LoopBack:
+00000064  D3C5                      92          add.l   d5,a1                                               ;Add the width of the image to the address of the pixel arrray
+00000066  5286                      93          addi.l  #1,d6                                               ;Increment the loop counter
+00000068  BC87                      94          cmp.l   d7,d6                                               ;Check if the loop counter has reached the Y offset, if not then loop back
+0000006A  66F8                      95          bne     LoopBAck
+0000006C                            96  
+0000006C                            97  DontLoop:       
+0000006C                            98          *Moving the X offset        
+0000006C  D3EF 0010                 99          add.l  PARAM_BITMAP_CHUNK_TOPLEFT_X(sp),a1                  ;For moving the X offset just add the chunk image's X position     
+00000070                           100    
+00000070                           101          *Calculating the width of the chunk to be drawn with respect to screen co-ordinates                                 
+00000070  282F 0008                102          move.l  PARAM_SCREEN_LOCATION_TOPLEFT_X(sp),d4              ;Move the Screen's X co-ordinate
+00000074  D8AF 0014                103          add.l   PARAM_BITMAP_CHUNK_WIDTH(sp),d4                     ;Add the chunk image's width. d4 will now point to the width of the image to be drawn from the 0th position of screen
+00000078                           104                                                                      
+00000078                           105          
+00000078                           106          *Calculating the remaining width of the image that has be incremented after drawing each row of pixels
+00000078  49F9 000000C8            107          lea     RemainingWidthOfBMP,a4
+0000007E  2885                     108          move.l  d5,(a4)                                             ;Move the width of the image
+00000080  2C2F 0014                109          move.l  PARAM_BITMAP_CHUNK_WIDTH(sp),d6                     ;Move the chunk image's width
+00000084  9D94                     110          sub.l   d6,(a4)                                             ;Subtract the chunk image's width
+00000086  2C2F 0010                111          move.l  PARAM_BITMAP_CHUNK_TOPLEFT_X(sp),d6                 ;Move the chunk's X offset
+0000008A  9D94                     112          sub.l   d6,(a4)                                             ;Subtract the chunk's X offset. a4 will now point to the remaining width of the image
+0000008C                           113      
+0000008C  4286                     114          clr.l   d6
+0000008E                           115  
+0000008E                           116          *Drawing of the pixels starts here
+0000008E                           117  DrawEachRow:
+0000008E  2E2F 0008                118          move.l  PARAM_SCREEN_LOCATION_TOPLEFT_X(sp),d7              ;d7 will contain the X corordinate of the screen             
+00000092                           119            
+00000092                           120  DrawEachPixel:
+00000092  4246                     121          clr.w   d6
+00000094                           122          
+00000094  1C19                     123          move.b  (a1)+,d6                                    ;Load the offset address of the color table and increment the address register
+00000096  E58E                     124          lsl.l   #$02,d6                                     ;Multiple the offset address by 4 because each color on color table is 4 bytes long
+00000098  2232 6000                125          move.l  (a2,d6),d1                                  ;Load the color of the pixel to data register. The color has to be in d1 register
+0000009C  E089                     126          lsr.l   #$8,d1                                      ;Shift out the least significant byte because this byte is added for padding
+0000009E                           127                                                              ;Set the pen color. We now have the color of the pixel in BGR format
+0000009E  B2BC 00B7AAB4            128          cmp.l   #TRANSPARENT_REPLACEMENT_COLOR,d1
+000000A4  6700 000C                129          beq     JumpTransparent                                      
+000000A8                           130                            
+000000A8  7050                     131          move.l  #PEN_COLOR_TRAP_CODE, d0                    ;Set the proper trap code to set the pen color
+000000AA  4E4F                     132          trap    #15                                         ;Pen color is now set
+000000AC                           133          
+000000AC                           134          
+000000AC                           135          *Draw the pixel on the X,Y co-ordinate
+000000AC  2207                     136          move.l  d7,d1                                       ;X co-ordinate should be kept in d1 register
+000000AE                           137                                                              ;Y co-ordinate should be kept in d2 register
+000000AE  7052                     138          move.l  #DRAW_PIXEL_TRAP_CODE,d0                    ;Set the proper trap code to draw the pixel using the set pen color
+000000B0  4E4F                     139          trap    #15
+000000B2                           140  
+000000B2                           141  JumpTransparent:        
+000000B2                           142         *Increment the X co-ordinate
+000000B2  5247                     143          addi.w    #1,d7
+000000B4                           144  
+000000B4  BE44                     145          cmp.w   d4,d7                                       ;Check if the chunk width has been reached, if not continue drawing with the same row
+000000B6  66DA                     146          bne     DrawEachPixel
+000000B8                           147                  
+000000B8                           148          *Increment the pixel array by the remaining width of the image
+000000B8  D3D4                     149          add.l   (a4),a1
+000000BA                           150          
+000000BA                           151         *Pixel array is now pointing to the beginning of the new row of the image
+000000BA                           152          
+000000BA                           153          *Add the X offset to draw pixels in the new row
+000000BA  D3EF 0010                154          add.l  PARAM_BITMAP_CHUNK_TOPLEFT_X(sp),a1
+000000BE                           155          
+000000BE                           156          *Decrement the Y co-ordinate
+000000BE  5342                     157          subi.w  #1,d2
+000000C0                           158  
+000000C0  B4AF 0004                159          cmp.l   PARAM_SCREEN_LOCATION_TOPLEFT_Y(sp),d2      ;Check if the Y co-ordinate has reached the top most row of the image, if not draw another row.
+000000C4  66C8                     160          bne     DrawEachRow                
+000000C6  4E75                     161          rts
+000000C8                           162    
+000000C8                           163  RemainingWidthOfBMP     ds.l    1
+000000CC                           164  ButterfreeImageData     ds.l    4
+000000DC                           165  BackgroundImageData     ds.l    4
+000000EC                           166  BirdImageData           ds.l    4
+000000FC                           167  GameOverImageData       ds.l    4 
+0000010C                           168  MainMenuData            ds.l    4
+0000011C                           169  
+0000011C                           170  
+0000011C                           171  
+0000011C                           172  
+0000011C                           173  
+0000011C                           174  
+Line 175 WARNING: END directive missing, starting address not set
+
+No errors detected
+1 warning generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+BACKGROUNDIMAGEDATA  DC
+BIRDIMAGEDATA       EC
+BUTTERFREEIMAGEDATA  CC
+DISPLAYIMAGE        42
+DONTLOOP            6C
+DRAWEACHPIXEL       92
+DRAWEACHROW         8E
+DRAW_PIXEL_TRAP_CODE  52
+FILE_OFFSET_TO_PIXELARRAY_BYTES  A
+GAMEOVERIMAGEDATA   FC
+JUMPTRANSPARENT     B2
+LITTLETOBIGENDIANLONG  3A
+LOADIMAGEDATA       0
+LOOPBACK            64
+MAINMENUDATA        10C
+PARAM_BITMAP_CHUNK_HEIGHT  18
+PARAM_BITMAP_CHUNK_TOPLEFT_X  10
+PARAM_BITMAP_CHUNK_TOPLEFT_Y  C
+PARAM_BITMAP_CHUNK_WIDTH  14
+PARAM_SCREEN_LOCATION_TOPLEFT_X  8
+PARAM_SCREEN_LOCATION_TOPLEFT_Y  4
+PEN_COLOR_TRAP_CODE  50
+REMAININGWIDTHOFBMP  C8
+TRANSPARENT_REPLACEMENT_COLOR  B7AAB4

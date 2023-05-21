@@ -1,0 +1,198 @@
+00001000 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.16.01
+Created On: 10/22/2022 11:37:03 PM
+
+00000000                             1  *-----------------------------------------------------------
+00000000                             2  * Title      : 7 Segment LED
+00000000                             3  * Written by : Gregory Allen
+00000000                             4  * Date       : 10/22/2022
+00000000                             5  * Description: Draw the seven segment LED using a digit table 
+00000000                             6  *              based off of offsets and manipulating the score given to 
+00000000                             7  *              handle the score in its number cases
+00000000                             8  *-----------------------------------------------------------
+00000000                             9  
+00000000                            10  
+00000000                            11  
+00000000                            12  Display7Segment        
+00000000                            13      *X and Y Coordinates of the score
+Line 14 ERROR: Undefined symbol
+00000000  47F9 004DBD16             14      lea     Number_Position_X,a3
+Line 15 ERROR: Undefined symbol
+00000006  49F9 004DBD16             15      lea     Number_Position_Y,a4
+0000000C                            16      
+0000000C                            17      *---------------------------------------------------------------------------------------------------------------------------
+0000000C                            18      ;Set the pen width
+Line 19 ERROR: Undefined symbol
+0000000C  223C 004DBD16             19      move.l  #DIGIT_PEN_WIDTH,d1                 
+Line 20 ERROR: Undefined symbol
+00000012  203C 004DBD16             20      move.l  #PEN_WIDTH_TRAP,d0 
+00000018  4E4F                      21      TRAP    #15
+0000001A                            22  
+0000001A                            23      *Setting the color for the mask rectangle
+Line 24 ERROR: Undefined symbol
+0000001A  223C 004DBD16             24      move.l  #BACKGROUND_COLOR,d1                    ;Set the pen color and fill color to black        
+Line 25 ERROR: Undefined symbol
+00000020  203C 004DBD16             25      move.l  #PEN_COLOR_TRAP,d0            ;Set the pen color
+00000026  4E4F                      26      TRAP    #15        
+Line 27 ERROR: Undefined symbol
+00000028  203C 004DBD16             27      move.l  #FILL_COLOR_TRAP,d0           ;Set the fill color
+0000002E  4E4F                      28      TRAP    #15
+00000030                            29      
+00000030                            30      
+00000030                            31      *Let's mask out the previously drawn numbers            
+00000030  2213                      32      move.l  (a3),d1                     ;Left top X co-ordinate
+00000032                            33     
+00000032  2414                      34      move.l  (a4),d2                     ;Left top Y co-ordinate
+00000034                            35      
+00000034  2613                      36      move.l  (a3),d3
+Line 37 ERROR: Undefined symbol
+00000036  2E3C 004DBD16             37      move.l  #DIGIT_WIDTH,d7
+Line 38 ERROR: Undefined symbol
+0000003C  CEFC BD16                 38      mulu.w  #(NUMBER_OF_DIGITS),d7
+00000040  D687                      39      add.l   d7,d3                       ;Right bottom X co-ordinate
+00000042                            40  
+00000042  2814                      41      move.l  (a4),d4                     ;Right bottom Y co-ordinate
+Line 42 ERROR: Undefined symbol
+00000044  0684 004DBD16             42      add.l   #LED_SIZE,d4
+Line 43 ERROR: Undefined symbol
+0000004A  0684 004DBD16             43      add.l   #LED_SIZE,d4
+00000050                            44             
+Line 45 ERROR: Undefined symbol
+00000050  203C 004DBD16             45      move.l  #DRAW_FILLED_RECTANGLE,d0   ;Draw filled rectangle
+00000056  4E4F                      46      TRAP    #15        
+00000058                            47      *---------------------------------------------------------------------------------------------------------------------------
+00000058                            48             
+Line 49 ERROR: Invalid syntax
+00000058                            49      move.l  #(NUMBER_OF_DIGITS-1),d4    ;Digit counter(In our case, 3 digits)
+00000058                            50      
+00000058                            51      ;Set the pen color
+Line 52 ERROR: Undefined symbol
+00000058  223C 004DBD16             52      move.l  #WHITE_COLOR,d1
+Line 53 ERROR: Undefined symbol
+0000005E  203C 004DBD16             53      move.l  #PEN_COLOR_TRAP,d0
+00000064  4E4F                      54      TRAP    #15
+00000066                            55            
+Line 56 ERROR: Symbol value differs between first and second pass
+00000066                            56  PRINTNEXTDIGIT:
+00000066  8CFC 000A                 57      divu.w  #10,d6                      ;Divide Score by 10 to get the remainder
+0000006A  4846                      58      swap    d6                          ;Swap the register to get the remainder which is in the higher word
+0000006C  3006                      59      move.w  d6,d0                       ;Move the remainder, which is the digit that will be drawn
+0000006E  4846                      60      swap    d6                          ;Swap back the register to get the remaining digits
+00000070  48C6                      61      ext.l   d6                          ;Extend the register to get rid of the remainder which is stored in the higher word
+00000072                            62      
+Line 63 ERROR: Undefined symbol
+00000072  2E3C 004DBD16             63      move.l  #DIGIT_WIDTH,d7             ;Load the digit width
+00000078  CEC4                      64      mulu.w  d4,d7                       ;Multiply it with the counter to get the offset X position where the digit is to be drawn
+0000007A                            65      
+0000007A  4DF9 0000016E             66      lea     DigitTable,a6               ;Load the DigitTable
+00000080  DDC0                      67      add.l   d0,a6                       ;Add the offset
+00000082                            68                                          ;a6 now points to the appropriate digit to be drawn
+00000082                            69         
+00000082  7A00                      70      move.l  #0,d5                       ;Load the initial offset to 0
+00000084  1616                      71      move.b  (a6),d3                     ;Load the digit data
+00000086                            72      
+Line 73 ERROR: Symbol value differs between first and second pass
+00000086                            73  CHECKNEXTBIT:    
+00000086  E28B                      74      lsr.l   #1,d3                       ;Left shift and check if it's 1 or a carry flag is set
+00000088  6500 001A                 75      bcs     DrawLine                    ;If the carry flag is set then draw the 7segment line
+0000008C                            76  
+Line 77 ERROR: Symbol value differs between first and second pass
+0000008C                            77  INCREMENTBITCOUNTER:    
+0000008C  5285                      78      addi.l  #1,d5                       ;Counter to check the 7 bits, which also acts as an offset
+Line 79 ERROR: Undefined symbol
+0000008E  0C85 004DBD16             79      cmpi.l  #SEGMENT7,d5                ;Check if we have drawn all the segments
+00000094  66F6                      80      bne     CHECKNEXTBIT                ;If not, then draw the next segment
+00000096  51CC FFD4                 81      dbra    d4,PRINTNEXTDIGIT           ;Subtract the loop counter by 1 and check if it has reached -1, if not then branch it
+0000009A                            82  
+0000009A  6000 0052                 83      bra     ESCAPE7SEGMENT              
+0000009E                            84  
+Line 85 ERROR: Symbol value differs between first and second pass
+0000009E                            85  DrawLine:
+0000009E  E58D                      86      lsl.l   #2,d5                       ;Let's use this counter as an offset. Multiply it by 4 as the data is stored in long words
+000000A0                            87      
+000000A0  4BF9 000000FE             88      lea     Led_Start_X1,a5             ;Load the X co-ordinate of the line start    
+000000A6  DBC5                      89      add.l   d5,a5                       ;Add the offset to fetch the data of the appropriate segment in 7 segments        
+000000A8  2215                      90      move.l  (a5),d1                     ;Load X1 into data register
+000000AA  D293                      91      add.l   (a3),d1                     ;Add the X position
+000000AC  D287                      92      add.l   d7,d1                       ;Add the digit's position(this changes for each digit)
+000000AE                            93      
+000000AE  4BF9 0000011A             94      lea     Led_Start_Y1,a5             ;Load the Y co-ordinate of the line start
+000000B4  DBC5                      95      add.l   d5,a5                       ;Add the offset to fetch the data of the appropriate segment in 7 segments 
+000000B6  2415                      96      move.l  (a5),d2                     ;Load Y1 into data register
+000000B8  D494                      97      add.l   (a4),d2                     ;Add the Y position
+000000BA                            98      
+Line 99 ERROR: Undefined symbol
+000000BA  203C 004DBD16             99      move.l  #MOVE_GRAPHICS_XY_TRAP,d0  ;This trap code is used to move the drawing point.
+000000C0  4E4F                     100      TRAP    #15
+000000C2                           101      
+000000C2                           102      
+000000C2  4BF9 00000136            103      lea     Led_End_X2,a5               ;Load the X co-ordinate of the line end
+000000C8  DBC5                     104      add.l   d5,a5                       ;Add the offset to fetch the data of the appropriate segment in 7 segments        
+000000CA  2215                     105      move.l  (a5),d1                     ;Load X1 into data register
+000000CC  D293                     106      add.l   (a3),d1                     ;Add the X position
+000000CE  D287                     107      add.l   d7,d1                       ;Add the digit's position(this changes for each digit)
+000000D0                           108  
+000000D0                           109      
+000000D0  4BF9 00000152            110      lea     Led_End_Y2,a5               ;Load the Y co-ordinate of the line end
+000000D6  DBC5                     111      add.l   d5,a5                       ;Add the offset to fetch the data of the appropriate segment in 7 segments        
+000000D8  2415                     112      move.l  (a5),d2                     ;Load X1 into data register
+000000DA  D494                     113      add.l   (a4),d2                     ;Add the Y position
+000000DC                           114  
+000000DC                           115  
+000000DC                           116  
+Line 117 ERROR: Undefined symbol
+000000DC  203C 004DBD16            117      move.l  #DRAW_LINE_TRAP_CODE,d0     ;This trap code draws the line from the drawing point to the set point.
+000000E2  4E4F                     118      TRAP    #15
+000000E4                           119  
+000000E4  E48D                     120      lsr.l   #2,d5                       ;Divide it by 4 to get back our counter
+000000E6                           121  
+000000E6  60AA                     122      bra     INCREMENTBITCOUNTER
+000000E8                           123  
+Line 124 ERROR: Symbol value differs between first and second pass
+000000E8                           124  ESCAPE7SEGMENT:       
+000000E8                           125      ;Set the default pen width
+Line 126 ERROR: Undefined symbol
+000000E8  223C 004DBD16            126      move.l  #DEFAULT_PEN_WIDTH,d1                 
+Line 127 ERROR: Undefined symbol
+000000EE  203C 004DBD16            127      move.l  #PEN_WIDTH_TRAP,d0 
+000000F4  4E4F                     128      TRAP    #15
+000000F6                           129  
+000000F6  4E75                     130      rts
+000000F8                           131  *--------------------------------a----------------------b----------------------c------------------------------d-----------------------e--------------------------------f------------------g----------------
+Line 132 ERROR: Symbol value differs between first and second pass
+000000F8=                          132  Led_Start_X1    dc.l    LED_OFFSET,                LED_SIZE,            LED_SIZE,                       LED_OFFSET,            0,                               0,                      LED_OFFSET
+Line 133 ERROR: Symbol value differs between first and second pass
+000000F8=                          133  Led_Start_Y1    dc.l    0,                         LED_OFFSET,          LED_SIZE+LED_OFFSET,            LED_SIZE+LED_SIZE,     LED_SIZE+LED_OFFSET,             LED_OFFSET,             LED_SIZE
+Line 134 ERROR: Symbol value differs between first and second pass
+000000F8=                          134  Led_End_X2      dc.l    LED_SIZE-LED_OFFSET,       LED_SIZE,            LED_SIZE,                       LED_SIZE-LED_OFFSET,   0,                               0,                      LED_SIZE-LED_OFFSET
+Line 135 ERROR: Symbol value differs between first and second pass
+000000F8=                          135  Led_End_Y2      dc.l    0,                         LED_SIZE-LED_OFFSET, LED_SIZE+LED_SIZE-LED_OFFSET,   LED_SIZE+LED_SIZE,     LED_SIZE+LED_SIZE-LED_OFFSET,    LED_SIZE-LED_OFFSET,    LED_SIZE
+000000F8                           136  *--------------------------------a----------------------b----------------------c------------------------------d-----------------------e--------------------------------f------------------g-----------------
+Line 137 ERROR: Symbol value differs between first and second pass
+000000F8=                          137  DigitTable      dc.b    $3F,$06,$5B,$4F,$66,$6D,$7D,$07,$7F,$67
+000000F8                           138  
+000000F8                           139  
+000000F8                           140  
+000000F8                           141  
+000000F8                           142  
+000000F8                           143  
+Line 144 WARNING: END directive missing, starting address not set
+
+31 errors detected
+1 warning generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+CHECKNEXTBIT        8C
+DIGITTABLE          16E
+DISPLAY7SEGMENT     0
+DRAWLINE            A4
+ESCAPE7SEGMENT      EE
+INCREMENTBITCOUNTER  92
+LED_END_X2          136
+LED_END_Y2          152
+LED_START_X1        FE
+LED_START_Y1        11A
+PRINTNEXTDIGIT      6C

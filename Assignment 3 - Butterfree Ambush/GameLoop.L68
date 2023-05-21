@@ -1,0 +1,1110 @@
+00001000 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.16.01
+Created On: 5/21/2023 5:59:00 PM
+
+00000000                             1  *-----------------------------------------------------------
+00000000                             2  * Title      : Butterfree Ambush
+00000000                             3  * Written by : Gregory Allen
+00000000                             4  * Date       : 10/20/2022
+00000000                             5  * Description: This game is a spinoff of flappy bird inspired game which instead
+00000000                             6  *              has butterfree attempting to escape from flying type pokemon
+00000000                             7  *              Use the spacebar to escape incoming pokemon
+00000000                             8  *-----------------------------------------------------------
+00000000                             9  ;-----------------------------------------------------------
+00000000                            10  ; Trap Codes
+00000000                            11  *-----------------------------------------------------------
+00000000  =00000008                 12  TIMER_TRAP                      EQU 8
+00000000  =0000000B                 13  CLEAR_SCREEN_TRAP               EQU 11
+00000000  =00000011                 14  TURNON_DOUBLEBUFFER_TRAP        EQU 17
+00000000  =00000013                 15  KEY_INPUT_TRAP                  EQU 19
+00000000  =00000021                 16  SCREEN_SIZE_TRAP                EQU 33
+00000000                            17  
+00000000  =00000050                 18  PEN_COLOR_TRAP                  EQU 80
+00000000  =00000051                 19  FILL_COLOR_TRAP                 EQU 81
+00000000  =00000052                 20  DRAW_PIXEL_TRAP                 EQU 82
+00000000  =00000057                 21  DRAW_FILLED_RECTANGLE           EQU 87
+00000000  =00000055                 22  DRAW_LINE_TRAP_CODE             EQU 85
+00000000  =00000056                 23  MOVE_GRAPHICS_XY_TRAP           EQU 86
+00000000  =00000051                 24  FILL_COLOR_TRAP                 EQU 81
+00000000                            25  
+00000000  =0000005C                 26  DRAW_MODE_TRAP                  EQU 92
+00000000  =0000005D                 27  PEN_WIDTH_TRAP                  EQU 93
+00000000  =0000005E                 28  DISPLAY_BUFFER_TRAP             EQU 94
+00000000  =0000005F                 29  SCREEN_TEXT_TRAP                EQU 95
+00000000                            30  
+00000000                            31  ;-----------------------------------------------------------
+00000000                            32  ; Constant Variables
+00000000                            33  *-----------------------------------------------------------
+00000000  =000003C0                 34  SCREEN_WIDTH                    EQU 960
+00000000  =00000258                 35  SCREEN_HEIGHT                   EQU 600
+00000000  =00000326                 36  ENDGAME_WIDTH                   EQU 806
+00000000  =00000070                 37  ENDGAME_HEIGHT                  EQU 112
+00000000                            38  
+00000000  =00000008                 39  FRAC_BITS                       EQU 8
+00000000  =0000FF00                 40  CLEAR_WHOLE_SCREEN              EQU $FF00
+00000000  =0000003C                 41  LOAD_MSG_WIDTH                  EQU 60
+00000000  =00000018                 42  SIZE_DISPLAY_PARAMETERS_DATA    EQU 24
+00000000  =00000020                 43  SPACEBAR_KEY                    EQU $20
+00000000  =0000000A                 44  FILE_OFFSET_TO_PIXELARRAY       EQU 10
+00000000                            45  
+00000000  =00000038                 46  BUTTERFREE_WIDTH                EQU 56
+00000000  =00000038                 47  BUTTERFREE_HEIGHT               EQU 56
+00000000  =00000000                 48  BUTTERFREE_TOP_LEFT_X           EQU 0
+00000000  =00000000                 49  BUTTERFREE_TOP_LEFT_Y           EQU 0
+00000000  =00000064                 50  INITIAL_BUTTERFREE_TOP_LEFT_X   EQU 100
+00000000  =0000012C                 51  INITIAL_BUTTERFREE_TOP_LEFT_Y   EQU 300
+00000000  =000032C8                 52  BUTTERFREE_VELOCITY             EQU 13000
+00000000  =00005000                 53  BUTTERFREE_MAX_TOP              EQU $05000
+00000000  =00022000                 54  BUTTERFREE_MAX_BOTTOM           EQU $22000
+00000000                            55  
+00000000  =00000048                 56  BIRD_WIDTH                      EQU 72 
+00000000  =00000046                 57  BIRD_HEIGHT                     EQU 70
+00000000  =00004E20                 58  BIRD_VELOCITY                   EQU 20000
+00000000  =00000007                 59  NUMBER_OF_BIRD_SPAWNS           EQU 7
+00000000  =00006400                 60  BIRD_TOP_SPAWN_POS_Y            EQU 100<<FRAC_BITS        ;100 (left shifted by FRAC_BITS)100 - 170 - 240 
+00000000  =0000AA00                 61  BIRD_BMIDDLETOP_SPAWN_POS_Y     EQU 170<<FRAC_BITS        ;300 (left shifted by FRAC_BITS)
+00000000  =0000F000                 62  BIRD_BMIDDLETOP2_SPAWN_POS_Y    EQU 240<<FRAC_BITS        ;300 (left shifted by FRAC_BITS)
+00000000  =00013600                 63  BIRD_MIDDLE_SPAWN_POS_Y         EQU 310<<FRAC_BITS        ;500 (left shifted by FRAC_BITS)
+00000000  =00017C00                 64  BIRD_BMIDDLEBOTTOM_SPAWN_POS_Y  EQU 380<<FRAC_BITS        ;300 (left shifted by FRAC_BITS)
+00000000  =0001C200                 65  BIRD_BMIDDLEBOTTOM2_SPAWN_POS_Y EQU 450<<FRAC_BITS        ;500 (left shifted by FRAC_BITS)
+00000000  =00020800                 66  BIRD_BOTTOM_SPAWN_POS_Y         EQU 520<<FRAC_BITS        ;500 (left shifted by FRAC_BITS)
+00000000                            67  
+00000000                            68  
+00000000  =00038400                 69  BIRD_COMMON_SPAWN_POS_X         EQU 900<<FRAC_BITS        ;900 (left shifted by FRAC_BITS)
+00000000  =00000000                 70  BIRD_MAX_LEFT                   EQU $0
+00000000  =00000000                 71  BIRD_X                          EQU 0
+00000000  =00000000                 72  BIRD_Y                          EQU 0
+00000000                            73  
+00000000  =000001B3                 74  SCORE_X                         EQU 435
+00000000  =00000023                 75  SCORE_Y                         EQU 35
+00000000  =00001770                 76  GRAVITY                         EQU 6000
+00000000                            77  
+00000000  =00000002                 78  LED_OFFSET                      EQU 2
+00000000  =00000014                 79  LED_SIZE                        EQU 20
+00000000  =00000007                 80  SEGMENT7                        EQU 7
+00000000  =00000003                 81  DIGIT_PEN_WIDTH                 EQU 3
+00000000  =00000001                 82  DEFAULT_PEN_WIDTH               EQU 1
+00000000  =0000001A                 83  DIGIT_WIDTH                     EQU LED_SIZE+LED_OFFSET+4
+00000000  =00000003                 84  NUMBER_OF_DIGITS                EQU 3
+00000000  =00FFFFFF                 85  WHITE_COLOR                     EQU $00FFFFFF
+00000000  =00FAC979                 86  BACKGROUND_COLOR                EQU $00FAC979   
+00000000  =00B7AAB4                 87  TRANSPARENT_REPLACEMENT_COLOR   EQU $00B7AAB4             ;Purple  
+00000000                            88   
+00000000                            89  ;-----------------------------------------------------------
+00000000                            90  ; Registers
+00000000                            91  *-----------------------------------------------------------
+00000000                            92  ALL_REGISTERS                   REG d0-d7/a0-a6
+00000000                            93  REG_DRAW_BITMAP                 REG d0-d7/a0-a4
+00000000                            94  REGISTERS_COLLISION             REG d3-d6
+00000000                            95  REG_7SEGMENT_LED                REG d3-d7/a6
+00000000                            96  
+00001000                            97     ORG    $1000
+00001000                            98  START:                  
+00001000  4EB9 0000141A             99      jsr InitialGame
+00001006  4EB9 00001204            100      jsr LoadSpawn
+0000100C  23C3 001AD0A4            101      move.l d3,Bird_1_X
+00001012  23C4 001AD0A8            102      move.l d4,Bird_1_Y
+00001018                           103      
+00001018  4EB9 00001204            104  One jsr LoadSpawn
+0000101E  B8B9 001AD0A8            105      cmp.l Bird_1_Y,d4
+00001024  67F2                     106      beq  One
+00001026  0683 00004800            107      add.l #(72<<FRAC_BITS),d3
+0000102C  23C3 001AD0AC            108      move.l d3,Bird_2_X
+00001032  23C4 001AD0B0            109      move.l d4,Bird_2_Y
+00001038                           110      
+00001038  4EB9 00001204            111  Two jsr LoadSpawn
+0000103E  B8B9 001AD0A8            112      cmp.l Bird_1_Y,d4
+00001044  67F2                     113      beq  Two
+00001046  B8B9 001AD0B0            114      cmp.l Bird_2_Y,d4
+0000104C  67EA                     115      beq  Two
+0000104E  0683 00009000            116      add.l #(144<<FRAC_BITS),d3
+00001054  23C3 001AD0B4            117      move.l d3,Bird_3_X
+0000105A  23C4 001AD0B8            118      move.l d4,Bird_3_Y
+00001060                           119  
+00001060                           120  GAMELOOP:
+00001060  4EB9 000016FC            121      jsr HandlePlayerInput
+00001066                           122     
+00001066                           123     
+00001066  2639 001AD0A4            124      move.l Bird_1_X,d3
+0000106C  2839 001AD0A8            125      move.l Bird_1_Y,d4
+00001072  4EB9 000013D4            126      jsr HandleBird
+00001078  23C3 001AD0A4            127      move.l d3,Bird_1_X
+0000107E  23C4 001AD0A8            128      move.l d4,Bird_1_Y
+00001084  4EB9 000011B8            129      jsr DetectCollision
+0000108A                           130      
+0000108A                           131      
+0000108A  2639 001AD0AC            132      move.l Bird_2_X,d3
+00001090  2839 001AD0B0            133      move.l Bird_2_Y,d4
+00001096  4EB9 000013D4            134      jsr HandleBird
+0000109C  B6B9 001AD0A4            135      cmp.l Bird_1_X,d3
+000010A2  6600 0008                136      bne skip1
+000010A6  0683 00004800            137      add.l #(72<<FRAC_BITS),d3
+000010AC                           138  skip1    
+000010AC  23C3 001AD0AC            139      move.l d3,Bird_2_X
+000010B2  23C4 001AD0B0            140      move.l d4,Bird_2_Y
+000010B8  4EB9 000011B8            141      jsr DetectCollision
+000010BE                           142      
+000010BE  2639 001AD0B4            143      move.l Bird_3_X,d3
+000010C4  2839 001AD0B8            144      move.l Bird_3_Y,d4
+000010CA  4EB9 000013D4            145      jsr HandleBird
+000010D0  B6B9 001AD0A4            146      cmp.l Bird_1_X,d3
+000010D6  6600 0012                147      bne skip2
+000010DA  B6B9 001AD0AC            148      cmp.l Bird_2_X,d3
+000010E0  6600 0008                149      bne skip2
+000010E4  0683 00009000            150      add.l #(144<<FRAC_BITS),d3
+000010EA                           151  skip2 
+000010EA  23C3 001AD0B4            152      move.l d3,Bird_3_X
+000010F0  23C4 001AD0B8            153      move.l d4,Bird_3_Y
+000010F6  4EB9 000011B8            154      jsr DetectCollision
+000010FC                           155      
+000010FC                           156      
+000010FC  6000 FF62                157      bra GAMELOOP
+00001100                           158  GAMEOVER:
+00001100  4EB9 0000135A            159      jsr CoverButterfreeImage
+00001106  4EB9 0000131C            160      jsr CoverBirdImage
+0000110C  4EB9 0000111C            161      jsr EndGame
+00001112  4EB9 00001398            162      jsr DisplayBuffer
+00001118  FFFF FFFF                163      SIMHALT          
+0000111C                           164  
+0000111C                           165  EndGame:
+0000111C                           166      *Draw GameOver Image
+0000111C  103C 000B                167      move.b  #CLEAR_SCREEN_TRAP,d0
+00001120  223C 0000FF00            168      move.l  #CLEAR_WHOLE_SCREEN,d1
+00001126  4E4F                     169      trap    #15 
+00001128                           170      
+00001128  43F9 001AD080            171      lea LoadMsg, a1
+0000112E  223C 000001A4            172      move.l #(SCREEN_WIDTH/2)-LOAD_MSG_WIDTH,d1
+00001134  243C 000000F0            173      move.l #(SCREEN_HEIGHT/2)-LOAD_MSG_WIDTH,d2
+0000113A  705F                     174      move.l #SCREEN_TEXT_TRAP,d0
+0000113C  4E4F                     175      trap   #15    
+0000113E  4EB9 00001398            176      jsr    DisplayBuffer
+00001144                           177  
+00001144                           178        
+00001144  48E7 FFF8                179      movem.l REG_DRAW_BITMAP,-(sp)         
+00001148                           180          
+00001148  4BF9 000016DC            181      lea     EndGameData,a5                  
+0000114E  41F9 0012024A            182      lea     EndGameImage,a0
+00001154                           183                
+00001154                           184      *Pass the arguements using stack
+00001154  2F3C 00000258            185      move.l  #SCREEN_HEIGHT,-(sp)
+0000115A  2F3C 000003C0            186      move.l  #SCREEN_WIDTH,-(sp)        
+00001160  2F3C 00000000            187      move.l  #0,-(sp)                                       
+00001166  2F3C 00000000            188      move.l  #0,-(sp)                                       
+0000116C  2F3C 00000000            189      move.l  #0,-(sp)                                    
+00001172  2F3C 00000000            190      move.l  #0,-(sp)                                                     
+00001178  4EB9 00001622            191      jsr     DisplayImage
+0000117E                           192      
+0000117E                           193      ;Draw Score
+0000117E  DFFC 00000018            194      add.l   #SIZE_DISPLAY_PARAMETERS_DATA,sp                 
+00001184  4CDF 1FFF                195      movem.l (sp)+,REG_DRAW_BITMAP             
+00001188                           196      
+00001188  48E7 1F02                197      movem.l REG_7SEGMENT_LED,-(sp)             
+0000118C  2C39 001AD098            198      move.l  Score,d6                          
+00001192                           199      
+00001192  23FC 000001B3 001AD09C   200      move.l  #SCORE_X,Number_Position_X
+0000119C  23FC 00000023 001AD0A0   201      move.l  #SCORE_Y,Number_Position_Y
+000011A6  4EB9 0000174A            202      jsr     Display7Segment      
+000011AC  4CDF 40F8                203      movem.l (sp)+,REG_7SEGMENT_LED            
+000011B0  4EB9 00001398            204      jsr    DisplayBuffer
+000011B6                           205  
+000011B6                           206      *--------------------------------------------------------------------------------------------------------------------------
+000011B6  4E75                     207      rts
+000011B8                           208     
+000011B8                           209      
+000011B8                           210  DetectCollision:
+000011B8                           211          *d5 -> Butterfree's X
+000011B8                           212          *d6 -> Butterfree's Y
+000011B8                           213          *d3 -> Bird's X
+000011B8                           214          *d4 -> Bird's Y
+000011B8                           215          ;rect1 - Butterfree
+000011B8                           216          ;rect2 - Bird
+000011B8                           217          *if (rect1.x < rect2.x + rect2.width && rect1.x + rect1.width > rect2.x && rect1.y < rect2.y + rect2.height &&  rect1.y + rect1.height > rect2.y)
+000011B8                           218          *{
+000011B8                           219          *     Collision detected
+000011B8                           220          *} 
+000011B8                           221          *else
+000011B8                           222          *{
+000011B8                           223          *     Collision Not detected
+000011B8                           224          *}       
+000011B8                           225  
+000011B8  48E7 1E00                226          movem.l REGISTERS_COLLISION,-(sp)           
+000011BC                           227                      
+000011BC                           228          ;Shift out all the registers from 2e-8 land            
+000011BC  E08D                     229          lsr.l   #FRAC_BITS,d5                          
+000011BE  E08E                     230          lsr.l   #FRAC_BITS,d6
+000011C0  E08B                     231          lsr.l   #FRAC_BITS,d3
+000011C2  E08C                     232          lsr.l   #FRAC_BITS,d4                 
+000011C4                           233      
+000011C4  3003                     234          move.w  d3,d0                                   *if (rect1.x < rect2.x + rect2.width &&
+000011C6  0640 0048                235          addi.w  #BIRD_WIDTH,d0                          
+000011CA  B045                     236          cmp.w   d5,d0                                   
+000011CC  6D00 0030                237          blt     NOCOLLISION                             
+000011D0                           238          
+000011D0  3005                     239          move.w  d5,d0                                   *rect1.x + rect1.width > rect2.x &&
+000011D2  0640 0038                240          addi.w  #BUTTERFREE_WIDTH,d0                    
+000011D6  B640                     241          cmp.w   d0,d3                                   
+000011D8  6E00 0024                242          bgt     NOCOLLISION                             
+000011DC                           243          
+000011DC  3004                     244          move.w  d4,d0                                   *rect1.y < rect2.y + rect2.height &&
+000011DE  0640 0046                245          addi.w  #BIRD_HEIGHT,d0                         
+000011E2  B046                     246          cmp.w   d6,d0                                   
+000011E4  6D00 0018                247          blt     NOCOLLISION
+000011E8                           248          
+000011E8  3006                     249          move.w  d6,d0                                   *rect1.y + rect1.height > rect2.y)
+000011EA  0640 0038                250          addi.w  #BUTTERFREE_HEIGHT,d0                   
+000011EE  B840                     251          cmp.w   d0,d4                                  
+000011F0  6E00 000C                252          bgt     NOCOLLISION
+000011F4                           253          
+000011F4  4CDF 0078                254          movem.l (sp)+,REGISTERS_COLLISION               
+000011F8                           255          
+000011F8  6000 FF06                256          bra GAMEOVER
+000011FC  4E75                     257          rts
+000011FE                           258  
+000011FE                           259  NOCOLLISION:
+000011FE  4CDF 0078                260          movem.l (sp)+,REGISTERS_COLLISION                  
+00001202  4E75                     261          rts
+00001204                           262  
+00001204                           263  ; Subroutine to spawn birds at spawn points
+00001204                           264  LoadSpawn
+00001204  4EB9 0000189C            265          jsr     GetRandomByteIntoD0
+0000120A  7207                     266          move.l  #NUMBER_OF_BIRD_SPAWNS,d1
+0000120C  C200                     267          and.b   d0,d1                                   
+0000120E                           268          
+0000120E  0C01 0000                269          cmpi.b  #0,d1                                 
+00001212  6600 000C                270          bne     CHECKFOR1        
+00001216  283C 00006400            271          move.l  #BIRD_TOP_SPAWN_POS_Y,d4              
+0000121C  6000 0062                272          bra.w   LOADSPAWNPOS_X                                                 
+00001220                           273  CHECKFOR1:
+00001220  0C01 0001                274          cmpi.b  #1,d1                                   
+00001224  6600 000C                275          bne     CHECKFOR2                               
+00001228  283C 0000AA00            276          move.l  #BIRD_BMIDDLETOP_SPAWN_POS_Y,d4             
+0000122E  6000 0050                277          bra.w   LOADSPAWNPOS_X   
+00001232                           278  CHECKFOR2:
+00001232  0C01 0002                279          cmpi.b  #2,d1                                   
+00001236  6600 000C                280          bne     CHECKFOR3                               
+0000123A  283C 0000F000            281          move.l  #BIRD_BMIDDLETOP2_SPAWN_POS_Y,d4             
+00001240  6000 003E                282          bra.w   LOADSPAWNPOS_X   
+00001244                           283  CHECKFOR3:
+00001244  0C01 0003                284          cmpi.b  #3,d1                                   
+00001248  6600 000C                285          bne     CHECKFOR4                               
+0000124C  283C 00013600            286          move.l  #BIRD_MIDDLE_SPAWN_POS_Y,d4             
+00001252  6000 002C                287          bra.w   LOADSPAWNPOS_X   
+00001256                           288  CHECKFOR4:
+00001256  0C01 0004                289          cmpi.b  #4,d1                                   
+0000125A  6600 000C                290          bne     CHECKFOR5                               
+0000125E  283C 00017C00            291          move.l  #BIRD_BMIDDLEBOTTOM_SPAWN_POS_Y,d4             
+00001264  6000 001A                292          bra.w   LOADSPAWNPOS_X   
+00001268                           293  CHECKFOR5:
+00001268  0C01 0005                294          cmpi.b  #5,d1                                   
+0000126C  6600 000C                295          bne     CHECKFOR6                              
+00001270  283C 0001C200            296          move.l  #BIRD_BMIDDLEBOTTOM2_SPAWN_POS_Y,d4             
+00001276  6000 0008                297          bra.w   LOADSPAWNPOS_X                           
+0000127A                           298  CHECKFOR6:
+0000127A  283C 00020800            299          move.l  #BIRD_BOTTOM_SPAWN_POS_Y,d4                                                                 
+00001280                           300  LOADSPAWNPOS_X:
+00001280  263C 00038400            301          move.l  #BIRD_COMMON_SPAWN_POS_X,d3                                  
+00001286  4E75                     302          rts   
+00001288                           303  
+00001288                           304  DrawButterfree:
+00001288  2205                     305      move.l  d5,d1                                         
+0000128A  2406                     306      move.l  d6,d2                                   
+0000128C                           307          
+0000128C  E089                     308      lsr.l   #FRAC_BITS,d1                           
+0000128E  E08A                     309      lsr.l   #FRAC_BITS,d2                         
+00001290                           310    
+00001290  48E7 FFF8                311      movem.l REG_DRAW_BITMAP,-(sp)
+00001294                           312    
+00001294  4BF9 000016AC            313      lea ButterfreeImageData,a5
+0000129A  41F9 0011B52E            314      lea ButterfreeImage,a0
+000012A0  2F3C 00000038            315      move.l #BUTTERFREE_HEIGHT,-(sp)
+000012A6  2F3C 00000038            316      move.l #BUTTERFREE_WIDTH,-(sp)
+000012AC  2F3C 00000000            317      move.l #BUTTERFREE_TOP_LEFT_X,-(sp)
+000012B2  2F3C 00000000            318      move.l #BUTTERFREE_TOP_LEFT_Y,-(sp)
+000012B8  2F01                     319      move.l d1,-(sp)
+000012BA  2F02                     320      move.l d2,-(sp)
+000012BC  4EB9 00001622            321      jsr DisplayImage
+000012C2  DFFC 00000018            322      add.l #SIZE_DISPLAY_PARAMETERS_DATA,sp
+000012C8  4CDF 1FFF                323      movem.l (sp)+,REG_DRAW_BITMAP
+000012CC  4EB9 00001398            324      jsr DisplayBuffer
+000012D2  4E75                     325      rts   
+000012D4                           326   
+000012D4                           327  DrawBird:
+000012D4  2203                     328      move.l  d3,d1                                          
+000012D6  2404                     329      move.l  d4,d2                                 
+000012D8                           330          
+000012D8  E089                     331      lsr.l   #FRAC_BITS,d1                          
+000012DA  E08A                     332      lsr.l   #FRAC_BITS,d2                          
+000012DC                           333      
+000012DC  48E7 FFF8                334      movem.l REG_DRAW_BITMAP,-(sp)
+000012E0                           335    
+000012E0  4BF9 000016CC            336      lea BirdImageData,a5
+000012E6  41F9 0011EA64            337      lea BirdImage,a0
+000012EC  2F3C 00000046            338      move.l #BIRD_HEIGHT,-(sp)
+000012F2  2F3C 00000048            339      move.l #BIRD_WIDTH,-(sp)
+000012F8  2F38 0000                340      move.l BIRD_X,-(sp)
+000012FC  2F38 0000                341      move.l BIRD_Y,-(sp)
+00001300  2F01                     342      move.l d1,-(sp)
+00001302  2F02                     343      move.l d2,-(sp)
+00001304  4EB9 00001622            344      jsr DisplayImage
+0000130A  DFFC 00000018            345      add.l #SIZE_DISPLAY_PARAMETERS_DATA,sp
+00001310  4CDF 1FFF                346      movem.l (sp)+,REG_DRAW_BITMAP
+00001314  4EB9 00001398            347      jsr DisplayBuffer
+0000131A  4E75                     348      rts 
+0000131C                           349      
+0000131C                           350  CoverBirdImage:
+0000131C  2203                     351      move.l d3,d1
+0000131E  2404                     352      move.l d4,d2
+00001320                           353      
+00001320  E089                     354      lsr.l #FRAC_BITS,d1
+00001322  E08A                     355      lsr.l #FRAC_BITS,d2
+00001324  48E7 FFF8                356      movem.l REG_DRAW_BITMAP,-(sp)
+00001328                           357      
+00001328  4BF9 000016BC            358      lea BackgroundImageData,a5
+0000132E  41F9 0008E6F8            359      lea BackgroundImage,a0 
+00001334  2F3C 00000046            360      move.l #BIRD_HEIGHT,-(sp)
+0000133A  2F3C 00000048            361      move.l #BIRD_WIDTH,-(sp)
+00001340  2F01                     362      move.l d1,-(sp)
+00001342  2F02                     363      move.l d2,-(sp)
+00001344  2F01                     364      move.l d1,-(sp)
+00001346  2F02                     365      move.l d2,-(sp)
+00001348  4EB9 00001622            366      jsr DisplayImage
+0000134E  DFFC 00000018            367      add.l #SIZE_DISPLAY_PARAMETERS_DATA,sp
+00001354  4CDF 1FFF                368      movem.l (sp)+,REG_DRAW_BITMAP
+00001358  4E75                     369      rts  
+0000135A                           370    
+0000135A                           371  CoverButterfreeImage:
+0000135A  2205                     372      move.l d5,d1
+0000135C  2406                     373      move.l d6,d2
+0000135E                           374      
+0000135E  E089                     375      lsr.l #FRAC_BITS,d1
+00001360  E08A                     376      lsr.l #FRAC_BITS,d2
+00001362  48E7 FFF8                377      movem.l REG_DRAW_BITMAP,-(sp)
+00001366                           378      
+00001366  4BF9 000016BC            379      lea BackgroundImageData,a5
+0000136C  41F9 0008E6F8            380      lea BackgroundImage,a0 
+00001372  2F3C 00000038            381      move.l #BUTTERFREE_HEIGHT,-(sp)
+00001378  2F3C 00000038            382      move.l #BUTTERFREE_WIDTH,-(sp)
+0000137E  2F01                     383      move.l d1,-(sp)
+00001380  2F02                     384      move.l d2,-(sp)
+00001382  2F01                     385      move.l d1,-(sp)
+00001384  2F02                     386      move.l d2,-(sp)
+00001386  4EB9 00001622            387      jsr DisplayImage
+0000138C  DFFC 00000018            388      add.l #SIZE_DISPLAY_PARAMETERS_DATA,sp
+00001392  4CDF 1FFF                389      movem.l (sp)+,REG_DRAW_BITMAP
+00001396  4E75                     390      rts   
+00001398                           391  
+00001398                           392  DisplayBuffer:
+00001398  705E                     393      move.l  #DISPLAY_BUFFER_TRAP,d0
+0000139A  4E4F                     394      trap    #15
+0000139C  4E75                     395      rts
+0000139E                           396      
+0000139E                           397  AddScore:   
+0000139E  48E7 1F02                398      movem.l REG_7SEGMENT_LED,-(sp)              
+000013A2  4DF9 001AD098            399      lea Score,a6
+000013A8  5296                     400      addi.l   #1,(a6)
+000013AA  2C39 001AD098            401      move.l  Score,d6                             
+000013B0                           402      
+000013B0  23FC 000001B3 001AD09C   403      move.l  #SCORE_X,Number_Position_X
+000013BA  23FC 00000023 001AD0A0   404      move.l  #SCORE_Y,Number_Position_Y
+000013C4  4EB9 0000174A            405      jsr     Display7Segment      
+000013CA  4CDF 40F8                406      movem.l (sp)+,REG_7SEGMENT_LED            
+000013CE  4EB8 1398                407      jsr    DisplayBuffer   
+000013D2  4E75                     408      rts
+000013D4                           409      
+000013D4                           410  HandleBird:
+000013D4  4EB8 12D4                411      jsr DrawBird
+000013D8  4EB8 131C                412      jsr CoverBirdImage
+000013DC  0483 00004E20            413      subi.l  #BIRD_VELOCITY,d3                
+000013E2  0C83 00000000            414      cmpi.l  #BIRD_MAX_LEFT,d3                 
+000013E8  6C00 002A                415      bge     SKIPMAXLEFT                         
+000013EC  7600                     416      move.l  #BIRD_MAX_LEFT,d3                  
+000013EE  4EB8 139E                417      jsr AddScore
+000013F2  4EB8 131C                418      jsr CoverBirdImage 
+000013F6  4EB8 1204                419  Aga jsr LoadSpawn
+000013FA  B879 001AD0A8            420      cmp Bird_1_Y,d4
+00001400  67F4                     421      beq Aga
+00001402  B879 001AD0B0            422      cmp Bird_2_Y,d4
+00001408  67EC                     423      beq Aga
+0000140A  B879 001AD0B8            424      cmp Bird_3_Y,d4
+00001410  67E4                     425      beq Aga
+00001412  4E75                     426      rts
+00001414                           427  SKIPMAXLEFT:        
+00001414  4EB8 12D4                428      jsr     DrawBird                      
+00001418                           429  EXIT:
+00001418  4E75                     430      rts
+0000141A                           431  ; Need to do a coparison before the reload and use a label to skip if needed
+0000141A                           432  * Put variables and constants here
+0000141A                           433  InitialGame               INCLUDE    "Subroutines/InitialGame.X68"
+0000141A                           434  InitialGame
+0000141A                           435      ;Clears Screen at Start
+0000141A  103C 000B                436      move.b  #CLEAR_SCREEN_TRAP,d0
+0000141E  223C 0000FF00            437      move.l  #CLEAR_WHOLE_SCREEN,d1
+00001424  4E4F                     438      trap    #15 
+00001426                           439      
+00001426                           440      ;Set the screen size
+00001426                           441      ;Width is contained in upper word and height in lower set of word
+00001426  7021                     442      move.l  #SCREEN_SIZE_TRAP,d0
+00001428  323C 03C0                443      move.w  #SCREEN_WIDTH,d1
+0000142C  4841                     444      swap    d1
+0000142E  323C 0258                445      move.w  #SCREEN_HEIGHT,d1
+00001432  4E4F                     446      trap    #15
+00001434                           447      
+00001434                           448      ;Turn on double buffer drawing mode
+00001434  123C 0011                449      move.b  #TURNON_DOUBLEBUFFER_TRAP,d1
+00001438  103C 005C                450      move.b  #DRAW_MODE_TRAP,d0
+0000143C  4E4F                     451      trap    #15
+0000143E                           452      
+0000143E                           453      ;Display Loading Screen so I can start building assets in buffer
+0000143E  43F9 001AD080            454      lea LoadMsg, a1
+00001444  223C 000001A4            455      move.l #(SCREEN_WIDTH/2)-LOAD_MSG_WIDTH,d1
+0000144A  243C 000000F0            456      move.l #(SCREEN_HEIGHT/2)-LOAD_MSG_WIDTH,d2
+00001450  705F                     457      move.l #SCREEN_TEXT_TRAP,d0
+00001452  4E4F                     458      trap   #15    
+00001454  4EB8 1398                459      jsr    DisplayBuffer
+00001458                           460      
+00001458                           461      ;Load image data
+00001458  4BF9 000016EC            462      lea MainMenuData,a5
+0000145E  41F9 000018C2            463      lea MainMenuImage,a0
+00001464  4EB9 000015E0            464      jsr LoadImageData
+0000146A                           465      
+0000146A                           466      ;Draw Main Menu
+0000146A  4BF9 000016EC            467      lea MainMenuData,a5
+00001470  41F9 000018C2            468      lea MainMenuImage,a0
+00001476                           469      
+00001476  2F3C 00000258            470      move.l #SCREEN_HEIGHT,-(sp)
+0000147C  2F3C 000003C0            471      move.l #SCREEN_WIDTH,-(sp)
+00001482  2F3C 00000000            472      move.l #0,-(sp)
+00001488  2F3C 00000000            473      move.l #0,-(sp)
+0000148E  2F3C 00000000            474      move.l #0,-(sp)
+00001494  2F3C 00000000            475      move.l #0,-(sp)
+0000149A  4EB9 00001622            476      jsr DisplayImage
+000014A0                           477      
+000014A0  4EB8 1398                478      jsr    DisplayBuffer
+000014A4  DFFC 00000018            479      add.l #SIZE_DISPLAY_PARAMETERS_DATA,sp
+000014AA                           480  
+000014AA                           481  DONTENTERGAME: 
+000014AA                           482      ;Check Spacebar to enter game 
+000014AA  7220                     483      move.l #SPACEBAR_KEY,d1
+000014AC  7013                     484      move.l #KEY_INPUT_TRAP,d0
+000014AE  4E4F                     485      trap #15
+000014B0                           486      
+000014B0                           487      ;If not pressed, then loop until spacebar is pressed
+000014B0  0281 000000FF            488      andi.l #$FF,d1              
+000014B6  67F2                     489      beq DONTENTERGAME
+000014B8                           490      
+000014B8                           491      ;Clear Screen and present a loading screen
+000014B8  103C 000B                492      move.b  #CLEAR_SCREEN_TRAP,d0
+000014BC  223C 0000FF00            493      move.l  #CLEAR_WHOLE_SCREEN,d1
+000014C2  4E4F                     494      trap    #15 
+000014C4                           495      
+000014C4  43F9 001AD080            496      lea LoadMsg, a1
+000014CA  223C 000001A4            497      move.l #(SCREEN_WIDTH/2)-LOAD_MSG_WIDTH,d1
+000014D0  243C 000000F0            498      move.l #(SCREEN_HEIGHT/2)-LOAD_MSG_WIDTH,d2
+000014D6  705F                     499      move.l #SCREEN_TEXT_TRAP,d0
+000014D8  4E4F                     500      trap   #15    
+000014DA  4EB8 1398                501      jsr    DisplayBuffer
+000014DE                           502      
+000014DE                           503      ;Load background, Butterfree, and score to the data variables
+000014DE  4BF9 000016BC            504      lea BackgroundImageData,a5
+000014E4  41F9 0008E6F8            505      lea BackgroundImage,a0
+000014EA  4EB9 000015E0            506      jsr LoadImageData
+000014F0                           507      
+000014F0  4BF9 000016AC            508      lea ButterfreeImageData,a5
+000014F6  41F9 0011B52E            509      lea ButterfreeImage,a0
+000014FC  4EB9 000015E0            510      jsr LoadImageData
+00001502                           511      
+00001502  4BF9 000016CC            512      lea BirdImageData,a5
+00001508  41F9 0011EA64            513      lea BirdImage,a0
+0000150E  4EB9 000015E0            514      jsr LoadImageData
+00001514                           515      
+00001514  4BF9 000016DC            516      lea EndGameData,a5
+0000151A  41F9 0012024A            517      lea EndGameImage,a0
+00001520  4EB9 000015E0            518      jsr LoadImageData
+00001526                           519      
+00001526                           520      ; Draw Background
+00001526  4BF9 000016BC            521      lea BackgroundImageData,a5
+0000152C  41F9 0008E6F8            522      lea BackgroundImage,a0
+00001532  2F3C 00000258            523      move.l #SCREEN_HEIGHT,-(sp)
+00001538  2F3C 000003C0            524      move.l #SCREEN_WIDTH,-(sp)
+0000153E  2F3C 00000000            525      move.l #0,-(sp)
+00001544  2F3C 00000000            526      move.l #0,-(sp)
+0000154A  2F3C 00000000            527      move.l #0,-(sp)
+00001550  2F3C 00000000            528      move.l #0,-(sp)
+00001556  4EB9 00001622            529      jsr DisplayImage
+0000155C  4EB8 1398                530      jsr    DisplayBuffer
+00001560  DFFC 00000018            531      add.l #SIZE_DISPLAY_PARAMETERS_DATA,sp
+00001566                           532  
+00001566                           533      ; Draw Butterfree
+00001566  4BF9 000016AC            534      lea ButterfreeImageData,a5
+0000156C  41F9 0011B52E            535      lea ButterfreeImage,a0
+00001572  2F3C 00000038            536      move.l #BUTTERFREE_HEIGHT,-(sp)
+00001578  2F3C 00000038            537      move.l #BUTTERFREE_WIDTH,-(sp)
+0000157E  2F3C 00000000            538      move.l #BUTTERFREE_TOP_LEFT_X,-(sp)
+00001584  2F3C 00000000            539      move.l #BUTTERFREE_TOP_LEFT_Y,-(sp)
+0000158A  2F3C 00000064            540      move.l #INITIAL_BUTTERFREE_TOP_LEFT_X,-(sp)
+00001590  2F3C 0000012C            541      move.l #INITIAL_BUTTERFREE_TOP_LEFT_Y,-(sp)
+00001596  4EB9 00001622            542      jsr DisplayImage
+0000159C  DFFC 00000018            543      add.l #SIZE_DISPLAY_PARAMETERS_DATA,sp
+000015A2                           544      
+000015A2  7A64                     545      move.l #INITIAL_BUTTERFREE_TOP_LEFT_X,d5
+000015A4  2C3C 0000012C            546      move.l #INITIAL_BUTTERFREE_TOP_LEFT_Y,d6
+000015AA  E18D                     547      lsl.l #FRAC_BITS,d5
+000015AC  E18E                     548      lsl.l #FRAC_BITS,d6
+000015AE  4EB8 1398                549      jsr    DisplayBuffer
+000015B2                           550     
+000015B2                           551      ; Draw Score
+000015B2  48E7 1F02                552      movem.l REG_7SEGMENT_LED,-(sp)             
+000015B6  2C39 001AD098            553      move.l  Score,d6                                    
+000015BC  23FC 000001B3 001AD09C   554      move.l  #SCORE_X,Number_Position_X
+000015C6  23FC 00000023 001AD0A0   555      move.l  #SCORE_Y,Number_Position_Y
+000015D0  4EB9 0000174A            556      jsr     Display7Segment      
+000015D6  4CDF 40F8                557      movem.l (sp)+,REG_7SEGMENT_LED            
+000015DA  4EB8 1398                558      jsr    DisplayBuffer
+000015DE  4E75                     559      rts
+000015E0                           560  
+000015E0                           561  
+000015E0                           562  
+000015E0                           563  
+000015E0                           564  
+000015E0                           565  
+000015E0                           566  
+000015E0                           567  
+000015E0                           568  
+000015E0                           569  
+000015E0                           570  
+000015E0                           571  
+000015E0                           572  -------------------- end include --------------------
+000015E0                           573  BitmapHandeler            INCLUDE    "Subroutines/BitmapHandeler.X68"
+000015E0                           574  ;Paramater Offsets used to access from stack
+000015E0  =00000018                575  PARAM_BITMAP_CHUNK_HEIGHT           EQU     24
+000015E0  =00000014                576  PARAM_BITMAP_CHUNK_WIDTH            EQU     20
+000015E0  =00000010                577  PARAM_BITMAP_CHUNK_TOPLEFT_X        EQU     16
+000015E0  =0000000C                578  PARAM_BITMAP_CHUNK_TOPLEFT_Y        EQU     12
+000015E0  =00000008                579  PARAM_SCREEN_LOCATION_TOPLEFT_X     EQU     8
+000015E0  =00000004                580  PARAM_SCREEN_LOCATION_TOPLEFT_Y     EQU     4
+000015E0                           581  
+000015E0                           582  LoadImageData
+000015E0  2248                     583          move.l  a0,a1
+000015E2  D0FC 000A                584          adda    #FILE_OFFSET_TO_PIXELARRAY,a0                     
+000015E6  2E18                     585          move.l  (a0)+,d7                                    
+000015E8  4EB9 0000161A            586          jsr     LittleToBigEndianLong                       
+000015EE  D3C7                     587          add.l   d7,a1                                       ;a1 -> address to the pixel array                                                
+000015F0  2AC9                     588          move.l  a1,(a5)+                                    ;Store address of the pixel array
+000015F2                           589          
+000015F2                           590          ;a0 -> DIB's header size 
+000015F2  2448                     591          move.l  a0,a2
+000015F4  2E18                     592          move.l  (a0)+,d7                                     
+000015F6  4EB9 0000161A            593          jsr     LittleToBigEndianLong                         
+000015FC                           594                                                              ;d7  holds size of the DIB header                                   
+000015FC  D5C7                     595          add.l   d7,a2                                       ;a2 -> address to the color table
+000015FE                           596                                                              
+000015FE  2ACA                     597          move.l  a2,(a5)+                                    ;Store address of color table
+00001600                           598          
+00001600                           599          ;a0 -> image's width
+00001600  2E18                     600          move.l  (a0)+,d7                                    ;Move the width of image
+00001602  4EB9 0000161A            601          jsr     LittleToBigEndianLong                     
+00001608  2A07                     602          move.l  d7,d5                                       ;d5 holds the width of the image   
+0000160A  2AC5                     603          move.l  d5,(a5)+                                    ;Store the width of the image
+0000160C                           604  
+0000160C                           605          
+0000160C                           606          ;a0 -> image's height
+0000160C  2E10                     607          move.l  (a0),d7                                     ;Move height of image
+0000160E  4EB9 0000161A            608          jsr     LittleToBigEndianLong                       
+00001614  2607                     609          move.l  d7,d3                                       ;d3 holds the height of the image
+00001616  2AC3                     610          move.l  d3,(a5)+                                    ;Store the height of the image
+00001618                           611                                      
+00001618  4E75                     612          rts
+0000161A                           613  LittleToBigEndianLong
+0000161A  E05F                     614          ror.w   #$8,d7                                      
+0000161C  4847                     615          swap    d7                                         
+0000161E  E05F                     616          ror.w   #$8,d7                                  
+00001620  4E75                     617          rts                          
+00001622                           618  
+00001622                           619  DisplayImage
+00001622  225D                     620          move.l  (a5)+,a1                                            ;Load address of the pixel array
+00001624  245D                     621          move.l  (a5)+,a2                                            ;Load address of the color table
+00001626  2A1D                     622          move.l  (a5)+,d5                                            ;Load width of the image
+00001628  261D                     623          move.l  (a5)+,d3                                            ;Load height of the image
+0000162A                           624                                                                                                                             
+0000162A                           625  
+0000162A  242F 0004                626          move.l  PARAM_SCREEN_LOCATION_TOPLEFT_Y(sp),d2          
+0000162E  D4AF 0018                627          add.l   PARAM_BITMAP_CHUNK_HEIGHT(sp),d2                    ;Y screen coordinate now points to the bottom left corner of the chunk image
+00001632                           628          
+00001632                           629                  
+00001632                           630          ;Get the address of the pixel array to the bottom left corner of the chunk     
+00001632  7C00                     631          move.l  #0,d6                                               
+00001634  2E03                     632          move.l  d3,d7                                               ;Move by the height of the image
+00001636  9EAF 000C                633          sub.l   PARAM_BITMAP_CHUNK_TOPLEFT_Y(sp),d7                 ;Subtract chunk's Y offset
+0000163A  9EAF 0018                634          sub.l   PARAM_BITMAP_CHUNK_HEIGHT(sp),d7                    ;Subtract chunk height     
+0000163E  BC87                     635          cmp.l   d7,d6                                           
+00001640  6C00 000A                636          bge     DontLoop 
+00001644                           637           
+00001644                           638  LoopBack:
+00001644  D3C5                     639          add.l   d5,a1                                               ;Add the width of the image to the address of the pixel arrray
+00001646  5286                     640          addi.l  #1,d6                                               ;Increment the loop counter
+00001648  BC87                     641          cmp.l   d7,d6                                               ;Check if the loop counter has reached the Y offset, if not then loop
+0000164A  66F8                     642          bne     LoopBack
+0000164C                           643  
+0000164C                           644  DontLoop:             
+0000164C                           645          ;d4 -> width of the image to be drawn
+0000164C  D3EF 0010                646          add.l  PARAM_BITMAP_CHUNK_TOPLEFT_X(sp),a1                                          
+00001650  282F 0008                647          move.l  PARAM_SCREEN_LOCATION_TOPLEFT_X(sp),d4              ;Move the Screen's X co-ordinate
+00001654  D8AF 0014                648          add.l   PARAM_BITMAP_CHUNK_WIDTH(sp),d4                     ;Add the chunk image's width.                                                                    
+00001658                           649          
+00001658                           650          ;Calculating the remaining width of the image that has be incremented after drawing each row of pixels
+00001658  49F9 000016A8            651          lea     RemainingWidthOfBMP,a4
+0000165E  2885                     652          move.l  d5,(a4)                                             ;Move the width of the image
+00001660  2C2F 0014                653          move.l  PARAM_BITMAP_CHUNK_WIDTH(sp),d6                   
+00001664  9D94                     654          sub.l   d6,(a4)                                             ;Subtract the chunk image's width
+00001666  2C2F 0010                655          move.l  PARAM_BITMAP_CHUNK_TOPLEFT_X(sp),d6               
+0000166A  9D94                     656          sub.l   d6,(a4)                                             ;a4 will now point to the remaining width of the image   
+0000166C  4286                     657          clr.l   d6
+0000166E                           658  
+0000166E                           659  
+0000166E                           660  DrawEachRow:
+0000166E  2E2F 0008                661          move.l  PARAM_SCREEN_LOCATION_TOPLEFT_X(sp),d7              ;d7 will contain the X corordinate of the screen             
+00001672                           662            
+00001672                           663  DrawEachPixel:
+00001672  4246                     664          clr.w   d6 
+00001674  1C19                     665          move.b  (a1)+,d6                                    ;Load the offset address of the color table and increment the address register
+00001676  E58E                     666          lsl.l   #$02,d6                                     ;Multiple the offset address by 4 because each color on color table is 4 bytes long
+00001678  2232 6000                667          move.l  (a2,d6),d1                                  ;Load the color of the pixel to data register. 
+0000167C  E089                     668          lsr.l   #$8,d1                                      
+0000167E                           669                                                            
+0000167E  B2BC 00B7AAB4            670          cmp.l   #TRANSPARENT_REPLACEMENT_COLOR,d1
+00001684  6700 000C                671          beq     JumpTransparent                                      
+00001688                           672                            
+00001688  7050                     673          move.l  #PEN_COLOR_TRAP, d0                    
+0000168A  4E4F                     674          trap    #15                                        
+0000168C                           675          
+0000168C                           676          
+0000168C                           677          ;Draw the pixel on the X,Y co-ordinate
+0000168C  2207                     678          move.l  d7,d1                                 
+0000168E                           679                                                          
+0000168E  7052                     680          move.l  #DRAW_PIXEL_TRAP,d0               
+00001690  4E4F                     681          trap    #15
+00001692                           682  
+00001692                           683  JumpTransparent:        
+00001692                           684         ;Increment the X co-ordinate
+00001692  5247                     685          addi.w    #1,d7
+00001694                           686  
+00001694                           687          ;Check if chunk width has got to the end, if not continue drawing row
+00001694  BE44                     688          cmp.w   d4,d7                                       
+00001696  66DA                     689          bne     DrawEachPixel
+00001698  D3D4                     690          add.l   (a4),a1
+0000169A                           691         
+0000169A                           692          ;Add the X offset to draw pixels in the new row
+0000169A  D3EF 0010                693          add.l  PARAM_BITMAP_CHUNK_TOPLEFT_X(sp),a1
+0000169E                           694          
+0000169E                           695          ;Decrement the Y co-ordinate
+0000169E  5342                     696          subi.w  #1,d2
+000016A0                           697  
+000016A0  B4AF 0004                698          cmp.l   PARAM_SCREEN_LOCATION_TOPLEFT_Y(sp),d2   
+000016A4  66C8                     699          bne     DrawEachRow                
+000016A6  4E75                     700          rts
+000016A8                           701    
+000016A8                           702  RemainingWidthOfBMP     ds.l    1
+000016AC                           703  ButterfreeImageData     ds.l    4
+000016BC                           704  BackgroundImageData     ds.l    4
+000016CC                           705  BirdImageData           ds.l    4
+000016DC                           706  EndGameData             ds.l    4 
+000016EC                           707  MainMenuData            ds.l    4
+000016FC                           708  
+000016FC                           709  
+000016FC                           710  
+000016FC                           711  
+000016FC                           712  
+000016FC                           713  
+000016FC                           714  
+000016FC                           715  
+000016FC                           716  
+000016FC                           717  -------------------- end include --------------------
+000016FC                           718  PlayerMovement            INCLUDE    "Subroutines/PlayerMovement.X68"
+000016FC                           719  HandlePlayerInput:    
+000016FC                           720          ; Check for Spacebar press   
+000016FC  7220                     721          move.l  #SPACEBAR_KEY,d1
+000016FE  7013                     722          move.l  #KEY_INPUT_TRAP,d0
+00001700  4E4F                     723          TRAP    #15
+00001702                           724          ;Spacebar is not pressed, then apply gravity to butterfree
+00001702  0281 000000FF            725          andi.l  #$FF,d1                                 
+00001708  6700 0020                726          beq     APPLY_GRAVITY  
+0000170C                           727  
+0000170C                           728          ;Cover butterfree and move up the screen by decrementing Y coordinate                         
+0000170C  4EB8 135A                729          jsr     CoverButterfreeImage
+00001710  0486 000032C8            730          subi.l  #BUTTERFREE_VELOCITY,d6
+00001716                           731         
+00001716                           732          ;Check Butterfrees Y coordinate has reached the top of  screen          
+00001716  0C86 00005000            733          cmpi.l  #BUTTERFREE_MAX_TOP,d6                  
+0000171C  6C00 0008                734          bge     SKIPMAXUP   
+00001720                           735   
+00001720                           736          ;Butterfree at top of screen -> set Butterfrees Y coordinate to the Max Top Value to prevent it from going off screen                                
+00001720  2C3C 00005000            737          move.l  #BUTTERFREE_MAX_TOP,d6                  
+00001726                           738  SKIPMAXUP:        
+00001726  4EB8 1288                739          jsr     DrawButterfree                        
+0000172A                           740  
+0000172A                           741  
+0000172A                           742  APPLY_GRAVITY: 
+0000172A                           743          ;Add Gravity to move Butterfree down the screen
+0000172A  4EB8 135A                744          jsr      CoverButterfreeImage
+0000172E  0686 00001770            745          addi.l  #GRAVITY,d6                             
+00001734  0C86 00022000            746          cmpi.l  #BUTTERFREE_MAX_BOTTOM,d6               
+0000173A  6F00 0008                747          ble     SKIPMAXDOWN                              
+0000173E  2C3C 00023770            748          move.l  #(BUTTERFREE_MAX_BOTTOM+GRAVITY),d6  
+00001744                           749  SKIPMAXDOWN:                
+00001744  4EB8 1288                750          jsr     DrawButterfree                         
+00001748                           751  EXITPLAYERINPUT:
+00001748  4E75                     752          rts
+0000174A                           753  
+0000174A                           754  
+0000174A                           755  
+0000174A                           756  
+0000174A                           757  
+0000174A                           758  -------------------- end include --------------------
+0000174A                           759  NumberDisplay             INCLUDE    "Subroutines/7SegmentLED.X68"
+0000174A                           760  
+0000174A                           761  
+0000174A                           762  
+0000174A                           763  Display7Segment        
+0000174A                           764      ;(X,Y) Coordinates of the score on screen
+0000174A  47F9 001AD09C            765      lea     Number_Position_X,a3
+00001750  49F9 001AD0A0            766      lea     Number_Position_Y,a4
+00001756                           767      
+00001756                           768      ;Pen Width
+00001756  7203                     769      move.l  #DIGIT_PEN_WIDTH,d1                 
+00001758  705D                     770      move.l  #PEN_WIDTH_TRAP,d0 
+0000175A  4E4F                     771      TRAP    #15
+0000175C                           772  
+0000175C                           773      ;Set color for the masking Rectangle behind score
+0000175C  223C 00FAC979            774      move.l  #BACKGROUND_COLOR,d1                        
+00001762  7050                     775      move.l  #PEN_COLOR_TRAP,d0            
+00001764  4E4F                     776      TRAP    #15        
+00001766  7051                     777      move.l  #FILL_COLOR_TRAP,d0          
+00001768  4E4F                     778      TRAP    #15
+0000176A                           779      
+0000176A                           780      
+0000176A                           781      ;Hide Previous numbers            
+0000176A  2213                     782      move.l  (a3),d1                    
+0000176C  2414                     783      move.l  (a4),d2                     
+0000176E                           784      
+0000176E  2613                     785      move.l  (a3),d3
+00001770  7E1A                     786      move.l  #DIGIT_WIDTH,d7
+00001772  CEFC 0003                787      mulu.w  #(NUMBER_OF_DIGITS),d7
+00001776  D687                     788      add.l   d7,d3                       
+00001778                           789  
+00001778  2814                     790      move.l  (a4),d4                     
+0000177A  0684 00000014            791      add.l   #LED_SIZE,d4
+00001780  0684 00000014            792      add.l   #LED_SIZE,d4
+00001786                           793             
+00001786  7057                     794      move.l  #DRAW_FILLED_RECTANGLE,d0  
+00001788  4E4F                     795      TRAP    #15        
+0000178A                           796      
+0000178A                           797      ;Number of Digits Counter
+0000178A  7802                     798      move.l  #(NUMBER_OF_DIGITS-1),d4    
+0000178C                           799      
+0000178C                           800      ;Pen color
+0000178C  223C 00FFFFFF            801      move.l  #WHITE_COLOR,d1
+00001792  7050                     802      move.l  #PEN_COLOR_TRAP,d0
+00001794  4E4F                     803      TRAP    #15
+00001796                           804            
+00001796                           805  PRINTNEXTDIGIT:
+00001796                           806      
+00001796  8CFC 000A                807      divu.w  #10,d6                      ;Divide Score by 10 to get the remainder
+0000179A  4846                     808      swap    d6                         
+0000179C  3006                     809      move.w  d6,d0                       ;Move the remainderinto d0, d0 -> Digit to be drawn
+0000179E  4846                     810      swap    d6                       
+000017A0  48C6                     811      ext.l   d6                          ;Extend the register to get rid of the remainder
+000017A2                           812      
+000017A2  7E1A                     813      move.l  #DIGIT_WIDTH,d7             
+000017A4  CEC4                     814      mulu.w  d4,d7                       ;Multiply Digit Width by the counter to get the offset X position where the digit is to be drawn
+000017A6                           815      
+000017A6  4DF9 00001884            816      lea     DigitTable,a6              
+000017AC  DDC0                     817      add.l   d0,a6                       ;a6 -> Digit in table
+000017AE                           818                                          
+000017AE                           819         
+000017AE  7A00                     820      move.l  #0,d5                       ;Load the initial offset to 0
+000017B0  1616                     821      move.b  (a6),d3                     ;Load the digit data
+000017B2                           822      
+000017B2                           823  CHECKNEXTBIT:    
+000017B2  E28B                     824      lsr.l   #1,d3                      
+000017B4  6500 0014                825      bcs     DrawLine                    ;If the carry flag is set then draw the line
+000017B8                           826  
+000017B8                           827  INCREMENTBITCOUNTER:    
+000017B8  5285                     828      addi.l  #1,d5                       ;Counter to check the 7 bits, which also acts as an offset
+000017BA  0C85 00000007            829      cmpi.l  #SEGMENT7,d5               
+000017C0  66F0                     830      bne     CHECKNEXTBIT                ;Draw the next segment
+000017C2  51CC FFD2                831      dbra    d4,PRINTNEXTDIGIT          
+000017C6                           832  
+000017C6  6000 0044                833      bra     ESCAPE7SEGMENT              
+000017CA                           834  
+000017CA                           835  DrawLine:
+000017CA  E58D                     836      lsl.l   #2,d5                       ;Counter
+000017CC                           837      
+000017CC  4BF9 00001814            838      lea     Led_Start_X1,a5             ;Load the X co-ordinate where the line starts 
+000017D2  DBC5                     839      add.l   d5,a5                               
+000017D4  2215                     840      move.l  (a5),d1                     ;Load X1 
+000017D6  D293                     841      add.l   (a3),d1                     ;Add the X position
+000017D8  D287                     842      add.l   d7,d1                       ;Add the digit's position
+000017DA                           843      
+000017DA  4BF9 00001830            844      lea     Led_Start_Y1,a5             ;Load the Y co-ordinate where the line starts
+000017E0  DBC5                     845      add.l   d5,a5                       ;Add the offset to get the right segment
+000017E2  2415                     846      move.l  (a5),d2                     ;Load Y1 
+000017E4  D494                     847      add.l   (a4),d2                     ;Add the Y position
+000017E6                           848      
+000017E6  7056                     849      move.l  #MOVE_GRAPHICS_XY_TRAP,d0  ;Move the drawing point.
+000017E8  4E4F                     850      TRAP    #15
+000017EA                           851      
+000017EA                           852      
+000017EA  4BF9 0000184C            853      lea     Led_End_X2,a5               ;Load the X co-ordinate where line ends
+000017F0  DBC5                     854      add.l   d5,a5                             
+000017F2  2215                     855      move.l  (a5),d1                     ;Load X1 
+000017F4  D293                     856      add.l   (a3),d1                     ;Add the X position
+000017F6  D287                     857      add.l   d7,d1                       ;Add the digit's position
+000017F8                           858  
+000017F8                           859      
+000017F8  4BF9 00001868            860      lea     Led_End_Y2,a5               ;Load the Y co-ordinate where line ends
+000017FE  DBC5                     861      add.l   d5,a5                       ;Add the offset to get the right segment      
+00001800  2415                     862      move.l  (a5),d2                     ;Load X1 into data register
+00001802  D494                     863      add.l   (a4),d2                     ;Add the Y position
+00001804                           864  
+00001804                           865  
+00001804                           866  
+00001804  7055                     867      move.l  #DRAW_LINE_TRAP_CODE,d0     
+00001806  4E4F                     868      trap    #15
+00001808  E48D                     869      lsr.l   #2,d5                       ;Divide it by 4 to for counter
+0000180A  60AC                     870      bra     INCREMENTBITCOUNTER
+0000180C                           871  
+0000180C                           872  ESCAPE7SEGMENT:       
+0000180C  7201                     873      move.l  #DEFAULT_PEN_WIDTH,d1                 
+0000180E  705D                     874      move.l  #PEN_WIDTH_TRAP,d0 
+00001810  4E4F                     875      TRAP    #15
+00001812  4E75                     876      rts
+00001814= 00000002 00000014 ...    877  Led_Start_X1    dc.l    LED_OFFSET,                LED_SIZE,            LED_SIZE,                       LED_OFFSET,            0,                               0,                      LED_OFFSET
+00001830= 00000000 00000002 ...    878  Led_Start_Y1    dc.l    0,                         LED_OFFSET,          LED_SIZE+LED_OFFSET,            LED_SIZE+LED_SIZE,     LED_SIZE+LED_OFFSET,             LED_OFFSET,             LED_SIZE
+0000184C= 00000012 00000014 ...    879  Led_End_X2      dc.l    LED_SIZE-LED_OFFSET,       LED_SIZE,            LED_SIZE,                       LED_SIZE-LED_OFFSET,   0,                               0,                      LED_SIZE-LED_OFFSET
+00001868= 00000000 00000012 ...    880  Led_End_Y2      dc.l    0,                         LED_SIZE-LED_OFFSET, LED_SIZE+LED_SIZE-LED_OFFSET,   LED_SIZE+LED_SIZE,     LED_SIZE+LED_SIZE-LED_OFFSET,    LED_SIZE-LED_OFFSET,    LED_SIZE
+00001884= 3F 06 5B 4F 66 6D ...    881  DigitTable      dc.b    $3F,$06,$5B,$4F,$66,$6D,$7D,$07,$7F,$67
+0000188E                           882  
+0000188E                           883  
+0000188E                           884  
+0000188E                           885  
+0000188E                           886  
+0000188E                           887  
+0000188E                           888  
+0000188E                           889  
+0000188E                           890  
+0000188E                           891  -------------------- end include --------------------
+0000188E                           892  RandomNumbers             INCLUDE    "Subroutines/RandomNumbers.X68"
+0000188E                           893  
+0000188E                           894  ;  Stores random number based on time since midnight into Rand_Value
+0000188E                           895  SeedRandomNumber
+0000188E  103C 0008                896          move.b  #TIMER_TRAP,d0
+00001892  4E4F                     897          trap    #15
+00001894  23C1 001AD094            898          move.l  d1,Rand_Value       
+0000189A  4E75                     899          rts
+0000189C                           900  
+0000189C                           901  ;Adapted from Utsabs Random Number Generator   
+0000189C                           902  GetRandomByteIntoD0
+0000189C  48E7 4000                903          movem.l d1,-(sp)
+000018A0  2039 001AD094            904          move.l  Rand_Value,d0
+000018A6  72AF                     905          moveq   #$AF-$100,d1
+000018A8  7412                     906          moveq   #18,d2
+000018AA                           907  Ninc0   
+000018AA  D080                     908          add.l   d0,d0
+000018AC  6400 0004                909          bcc     Ninc1
+000018B0  B300                     910          eor.b   d1,d0
+000018B2                           911  Ninc1
+000018B2  51CA FFF6                912          dbf     d2,Ninc0
+000018B6                           913      
+000018B6  23C0 001AD094            914          move.l  d0,Rand_Value
+000018BC                           915      
+000018BC  4CDF 0002                916          movem.l (sp)+,d1
+000018C0  4E75                     917          rts
+000018C2                           918  
+000018C2                           919  
+000018C2                           920  
+000018C2                           921  
+000018C2                           922  
+000018C2                           923  -------------------- end include --------------------
+000018C2                           924  
+000018C2                           925  MainMenuImage             incbin     "Images/MainMenu.bmp"
+0008E6F8                           926  BackgroundImage           incbin     "Images/background-Recovered.bmp"
+0011B52E                           927  ButterfreeImage           incbin     "Images/butterfreeSprite224x56.bmp"
+0011EA64                           928  BirdImage                 incbin     "Images/Pidgeot3.bmp"
+0012024A                           929  EndGameImage              incbin     "Images/EndGame.bmp"
+001AD080                           930  
+001AD080= 47 61 6D 65 20 69 ...    931  LoadMsg                   dc.b       'Game is Loading...',0
+001AD094                           932  Rand_Value                ds.l       1
+001AD098= 00000000                 933  Score                     dc.l       0
+001AD09C                           934  Number_Position_X         ds.l       1
+001AD0A0                           935  Number_Position_Y         ds.l       1
+001AD0A4= 00000000                 936  Bird_1_X                  dc.l       0
+001AD0A8= 00000000                 937  Bird_1_Y                  dc.l       0
+001AD0AC= 00000000                 938  Bird_2_X                  dc.l       0
+001AD0B0= 00000000                 939  Bird_2_Y                  dc.l       0
+001AD0B4= 00000000                 940  Bird_3_X                  dc.l       0
+001AD0B8= 00000000                 941  Bird_3_Y                  dc.l       0
+001AD0BC                           942      END    START        
+
+No errors detected
+No warnings generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+ADDSCORE            139E
+AGA                 13F6
+ALL_REGISTERS       7FFF
+APPLY_GRAVITY       172A
+BACKGROUNDIMAGE     8E6F8
+BACKGROUNDIMAGEDATA  16BC
+BACKGROUND_COLOR    FAC979
+BIRDIMAGE           11EA64
+BIRDIMAGEDATA       16CC
+BIRD_1_X            1AD0A4
+BIRD_1_Y            1AD0A8
+BIRD_2_X            1AD0AC
+BIRD_2_Y            1AD0B0
+BIRD_3_X            1AD0B4
+BIRD_3_Y            1AD0B8
+BIRD_BMIDDLEBOTTOM2_SPAWN_POS_Y  1C200
+BIRD_BMIDDLEBOTTOM_SPAWN_POS_Y  17C00
+BIRD_BMIDDLETOP2_SPAWN_POS_Y  F000
+BIRD_BMIDDLETOP_SPAWN_POS_Y  AA00
+BIRD_BOTTOM_SPAWN_POS_Y  20800
+BIRD_COMMON_SPAWN_POS_X  38400
+BIRD_HEIGHT         46
+BIRD_MAX_LEFT       0
+BIRD_MIDDLE_SPAWN_POS_Y  13600
+BIRD_TOP_SPAWN_POS_Y  6400
+BIRD_VELOCITY       4E20
+BIRD_WIDTH          48
+BIRD_X              0
+BIRD_Y              0
+BITMAPHANDELER      15E0
+BUTTERFREEIMAGE     11B52E
+BUTTERFREEIMAGEDATA  16AC
+BUTTERFREE_HEIGHT   38
+BUTTERFREE_MAX_BOTTOM  22000
+BUTTERFREE_MAX_TOP  5000
+BUTTERFREE_TOP_LEFT_X  0
+BUTTERFREE_TOP_LEFT_Y  0
+BUTTERFREE_VELOCITY  32C8
+BUTTERFREE_WIDTH    38
+CHECKFOR1           1220
+CHECKFOR2           1232
+CHECKFOR3           1244
+CHECKFOR4           1256
+CHECKFOR5           1268
+CHECKFOR6           127A
+CHECKNEXTBIT        17B2
+CLEAR_SCREEN_TRAP   B
+CLEAR_WHOLE_SCREEN  FF00
+COVERBIRDIMAGE      131C
+COVERBUTTERFREEIMAGE  135A
+DEFAULT_PEN_WIDTH   1
+DETECTCOLLISION     11B8
+DIGITTABLE          1884
+DIGIT_PEN_WIDTH     3
+DIGIT_WIDTH         1A
+DISPLAY7SEGMENT     174A
+DISPLAYBUFFER       1398
+DISPLAYIMAGE        1622
+DISPLAY_BUFFER_TRAP  5E
+DONTENTERGAME       14AA
+DONTLOOP            164C
+DRAWBIRD            12D4
+DRAWBUTTERFREE      1288
+DRAWEACHPIXEL       1672
+DRAWEACHROW         166E
+DRAWLINE            17CA
+DRAW_FILLED_RECTANGLE  57
+DRAW_LINE_TRAP_CODE  55
+DRAW_MODE_TRAP      5C
+DRAW_PIXEL_TRAP     52
+ENDGAME             111C
+ENDGAMEDATA         16DC
+ENDGAMEIMAGE        12024A
+ENDGAME_HEIGHT      70
+ENDGAME_WIDTH       326
+ESCAPE7SEGMENT      180C
+EXIT                1418
+EXITPLAYERINPUT     1748
+FILE_OFFSET_TO_PIXELARRAY  A
+FILL_COLOR_TRAP     51
+FRAC_BITS           8
+GAMELOOP            1060
+GAMEOVER            1100
+GETRANDOMBYTEINTOD0  189C
+GRAVITY             1770
+HANDLEBIRD          13D4
+HANDLEPLAYERINPUT   16FC
+INCREMENTBITCOUNTER  17B8
+INITIALGAME         141A
+INITIAL_BUTTERFREE_TOP_LEFT_X  64
+INITIAL_BUTTERFREE_TOP_LEFT_Y  12C
+JUMPTRANSPARENT     1692
+KEY_INPUT_TRAP      13
+LED_END_X2          184C
+LED_END_Y2          1868
+LED_OFFSET          2
+LED_SIZE            14
+LED_START_X1        1814
+LED_START_Y1        1830
+LITTLETOBIGENDIANLONG  161A
+LOADIMAGEDATA       15E0
+LOADMSG             1AD080
+LOADSPAWN           1204
+LOADSPAWNPOS_X      1280
+LOAD_MSG_WIDTH      3C
+LOOPBACK            1644
+MAINMENUDATA        16EC
+MAINMENUIMAGE       18C2
+MOVE_GRAPHICS_XY_TRAP  56
+NINC0               18AA
+NINC1               18B2
+NOCOLLISION         11FE
+NUMBERDISPLAY       174A
+NUMBER_OF_BIRD_SPAWNS  7
+NUMBER_OF_DIGITS    3
+NUMBER_POSITION_X   1AD09C
+NUMBER_POSITION_Y   1AD0A0
+ONE                 1018
+PARAM_BITMAP_CHUNK_HEIGHT  18
+PARAM_BITMAP_CHUNK_TOPLEFT_X  10
+PARAM_BITMAP_CHUNK_TOPLEFT_Y  C
+PARAM_BITMAP_CHUNK_WIDTH  14
+PARAM_SCREEN_LOCATION_TOPLEFT_X  8
+PARAM_SCREEN_LOCATION_TOPLEFT_Y  4
+PEN_COLOR_TRAP      50
+PEN_WIDTH_TRAP      5D
+PLAYERMOVEMENT      16FC
+PRINTNEXTDIGIT      1796
+RANDOMNUMBERS       188E
+RAND_VALUE          1AD094
+REGISTERS_COLLISION  78
+REG_7SEGMENT_LED    40F8
+REG_DRAW_BITMAP     1FFF
+REMAININGWIDTHOFBMP  16A8
+SCORE               1AD098
+SCORE_X             1B3
+SCORE_Y             23
+SCREEN_HEIGHT       258
+SCREEN_SIZE_TRAP    21
+SCREEN_TEXT_TRAP    5F
+SCREEN_WIDTH        3C0
+SEEDRANDOMNUMBER    188E
+SEGMENT7            7
+SIZE_DISPLAY_PARAMETERS_DATA  18
+SKIP1               10AC
+SKIP2               10EA
+SKIPMAXDOWN         1744
+SKIPMAXLEFT         1414
+SKIPMAXUP           1726
+SPACEBAR_KEY        20
+START               1000
+TIMER_TRAP          8
+TRANSPARENT_REPLACEMENT_COLOR  B7AAB4
+TURNON_DOUBLEBUFFER_TRAP  11
+TWO                 1038
+WHITE_COLOR         FFFFFF

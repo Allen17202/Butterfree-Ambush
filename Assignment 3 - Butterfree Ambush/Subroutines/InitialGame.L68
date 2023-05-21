@@ -1,0 +1,232 @@
+00001000 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.16.01
+Created On: 10/23/2022 12:38:45 PM
+
+00000000                             1  *-----------------------------------------------------------
+00000000                             2  * Title      : Initial Game
+00000000                             3  * Written by : Gregory Allen
+00000000                             4  * Date       : 10/20/2022
+00000000                             5  * Description: Subroutinue to load background, assets and anything else that is needed for game to start
+00000000                             6  *-----------------------------------------------------------
+00000000                             7  InitialGame
+00000000                             8      ;Clears Screen at Start
+Line 9 ERROR: Undefined symbol
+00000000  103C 0016                  9      move.b  #CLEAR_SCREEN_TRAP,d0
+Line 10 ERROR: Undefined symbol
+00000004  223C 004DBD16             10      move.l  #CLEAR_WHOLE_SCREEN,d1
+0000000A  4E4F                      11      trap    #15 
+0000000C                            12      
+0000000C                            13      ;Set the screen size
+0000000C                            14      ;Width is contained in upper word and height in lower set of word
+Line 15 ERROR: Undefined symbol
+0000000C  203C 004DBD16             15      move.l  #SCREEN_SIZE_TRAP,d0
+Line 16 ERROR: Undefined symbol
+00000012  323C BD16                 16      move.w  #SCREEN_WIDTH,d1
+00000016  4841                      17      swap    d1
+Line 18 ERROR: Undefined symbol
+00000018  323C BD16                 18      move.w  #SCREEN_HEIGHT,d1
+0000001C  4E4F                      19      trap    #15
+0000001E                            20      
+0000001E                            21      ;Turn on double buffer drawing mode
+Line 22 ERROR: Undefined symbol
+0000001E  123C 0016                 22      move.b  #TURNON_DOUBLEBUFFER_TRAP,d1
+Line 23 ERROR: Undefined symbol
+00000022  103C 0016                 23      move.b  #DRAW_MODE_TRAP,d0
+00000026  4E4F                      24      trap    #15
+00000028                            25      
+00000028                            26      ;Display Loading Screen so I can start building assets in buffer
+Line 27 ERROR: Undefined symbol
+00000028  43F9 004DBD16             27      lea LoadMsg, a1
+Line 28 ERROR: Invalid syntax
+0000002E                            28      move.l #(SCREEN_WIDTH/2)-LOAD_MSG_WIDTH,d1
+Line 29 ERROR: Invalid syntax
+0000002E                            29      move.l #(SCREEN_HEIGHT/2)-LOAD_MSG_WIDTH,d2
+Line 30 ERROR: Undefined symbol
+0000002E  203C 004DBD16             30      move.l #SCREEN_TEXT_TRAP,d0
+00000034  4E4F                      31      trap   #15    
+Line 32 ERROR: Undefined symbol
+00000036  4EB9 004DBD16             32      jsr    DisplayBuffer
+0000003C                            33      
+0000003C                            34      ;Load image data
+Line 35 ERROR: Undefined symbol
+0000003C  4BF9 004DBD16             35      lea MainMenuData,a5
+Line 36 ERROR: Undefined symbol
+00000042  41F9 004DBD16             36      lea MainMenuImage,a0
+Line 37 ERROR: Undefined symbol
+00000048  4EB9 004DBD16             37      jsr LoadImageData
+0000004E                            38      
+0000004E                            39      ;Draw Main Menu
+Line 40 ERROR: Undefined symbol
+0000004E  4BF9 004DBD16             40      lea MainMenuData,a5
+Line 41 ERROR: Undefined symbol
+00000054  41F9 004DBD16             41      lea MainMenuImage,a0
+0000005A                            42      
+Line 43 ERROR: Undefined symbol
+0000005A  2F3C 004DBD16             43      move.l #SCREEN_HEIGHT,-(sp)
+Line 44 ERROR: Undefined symbol
+00000060  2F3C 004DBD16             44      move.l #SCREEN_WIDTH,-(sp)
+00000066  2F3C 00000000             45      move.l #0,-(sp)
+0000006C  2F3C 00000000             46      move.l #0,-(sp)
+00000072  2F3C 00000000             47      move.l #0,-(sp)
+00000078  2F3C 00000000             48      move.l #0,-(sp)
+Line 49 ERROR: Undefined symbol
+0000007E  4EB9 004DBD16             49      jsr DisplayImage
+00000084                            50      
+Line 51 ERROR: Undefined symbol
+00000084  4EB9 004DBD16             51      jsr    DisplayBuffer
+Line 52 ERROR: Undefined symbol
+0000008A  DFFC 004DBD16             52      add.l #SIZE_DISPLAY_PARAMETERS_DATA,sp
+00000090                            53  
+Line 54 ERROR: Symbol value differs between first and second pass
+00000090                            54  DONTENTERGAME: 
+00000090                            55      ;Check Spacebar to enter game 
+Line 56 ERROR: Undefined symbol
+00000090  223C 004DBD16             56      move.l #SPACEBAR_KEY,d1
+Line 57 ERROR: Undefined symbol
+00000096  203C 004DBD16             57      move.l #KEY_INPUT_TRAP,d0
+0000009C  4E4F                      58      trap #15
+0000009E                            59      
+0000009E                            60      ;If not pressed, then loop until spacebar is pressed
+0000009E  0281 000000FF             61      andi.l #$FF,d1              
+000000A4  67F6                      62      beq DONTENTERGAME
+000000A6                            63      
+000000A6                            64      ;Clear Screen and present a loading screen
+Line 65 ERROR: Undefined symbol
+000000A6  103C 0016                 65      move.b  #CLEAR_SCREEN_TRAP,d0
+Line 66 ERROR: Undefined symbol
+000000AA  223C 004DBD16             66      move.l  #CLEAR_WHOLE_SCREEN,d1
+000000B0  4E4F                      67      trap    #15 
+000000B2                            68      
+Line 69 ERROR: Undefined symbol
+000000B2  43F9 004DBD16             69      lea LoadMsg, a1
+Line 70 ERROR: Invalid syntax
+000000B8                            70      move.l #(SCREEN_WIDTH/2)-LOAD_MSG_WIDTH,d1
+Line 71 ERROR: Invalid syntax
+000000B8                            71      move.l #(SCREEN_HEIGHT/2)-LOAD_MSG_WIDTH,d2
+Line 72 ERROR: Undefined symbol
+000000B8  203C 004DBD16             72      move.l #SCREEN_TEXT_TRAP,d0
+000000BE  4E4F                      73      trap   #15    
+Line 74 ERROR: Undefined symbol
+000000C0  4EB9 004DBD16             74      jsr    DisplayBuffer
+000000C6                            75      
+000000C6                            76      ;Load background, Butterfree, and score to the data variables
+Line 77 ERROR: Undefined symbol
+000000C6  4BF9 004DBD16             77      lea BackgroundImageData,a5
+Line 78 ERROR: Undefined symbol
+000000CC  41F9 004DBD16             78      lea BackgroundImage,a0
+Line 79 ERROR: Undefined symbol
+000000D2  4EB9 004DBD16             79      jsr LoadImageData
+000000D8                            80      
+Line 81 ERROR: Undefined symbol
+000000D8  4BF9 004DBD16             81      lea ButterfreeImageData,a5
+Line 82 ERROR: Undefined symbol
+000000DE  41F9 004DBD16             82      lea ButterfreeImage,a0
+Line 83 ERROR: Undefined symbol
+000000E4  4EB9 004DBD16             83      jsr LoadImageData
+000000EA                            84      
+Line 85 ERROR: Undefined symbol
+000000EA  4BF9 004DBD16             85      lea BirdImageData,a5
+Line 86 ERROR: Undefined symbol
+000000F0  41F9 004DBD16             86      lea BirdImage,a0
+Line 87 ERROR: Undefined symbol
+000000F6  4EB9 004DBD16             87      jsr LoadImageData
+000000FC                            88      
+Line 89 ERROR: Undefined symbol
+000000FC  4BF9 004DBD16             89      lea EndGameData,a5
+Line 90 ERROR: Undefined symbol
+00000102  41F9 004DBD16             90      lea EndGameImage,a0
+Line 91 ERROR: Undefined symbol
+00000108  4EB9 004DBD16             91      jsr LoadImageData
+0000010E                            92      
+0000010E                            93      ; Draw Background
+Line 94 ERROR: Undefined symbol
+0000010E  4BF9 004DBD16             94      lea BackgroundImageData,a5
+Line 95 ERROR: Undefined symbol
+00000114  41F9 004DBD16             95      lea BackgroundImage,a0
+Line 96 ERROR: Undefined symbol
+0000011A  2F3C 004DBD16             96      move.l #SCREEN_HEIGHT,-(sp)
+Line 97 ERROR: Undefined symbol
+00000120  2F3C 004DBD16             97      move.l #SCREEN_WIDTH,-(sp)
+00000126  2F3C 00000000             98      move.l #0,-(sp)
+0000012C  2F3C 00000000             99      move.l #0,-(sp)
+00000132  2F3C 00000000            100      move.l #0,-(sp)
+00000138  2F3C 00000000            101      move.l #0,-(sp)
+Line 102 ERROR: Undefined symbol
+0000013E  4EB9 004DBD16            102      jsr DisplayImage
+Line 103 ERROR: Undefined symbol
+00000144  4EB9 004DBD16            103      jsr    DisplayBuffer
+Line 104 ERROR: Undefined symbol
+0000014A  DFFC 004DBD16            104      add.l #SIZE_DISPLAY_PARAMETERS_DATA,sp
+00000150                           105  
+00000150                           106      ; Draw Butterfree
+Line 107 ERROR: Undefined symbol
+00000150  4BF9 004DBD16            107      lea ButterfreeImageData,a5
+Line 108 ERROR: Undefined symbol
+00000156  41F9 004DBD16            108      lea ButterfreeImage,a0
+Line 109 ERROR: Undefined symbol
+0000015C  2F3C 004DBD16            109      move.l #BUTTERFREE_HEIGHT,-(sp)
+Line 110 ERROR: Undefined symbol
+00000162  2F3C 004DBD16            110      move.l #BUTTERFREE_WIDTH,-(sp)
+Line 111 ERROR: Undefined symbol
+00000168  2F3C 004DBD16            111      move.l #BUTTERFREE_TOP_LEFT_X,-(sp)
+Line 112 ERROR: Undefined symbol
+0000016E  2F3C 004DBD16            112      move.l #BUTTERFREE_TOP_LEFT_Y,-(sp)
+Line 113 ERROR: Undefined symbol
+00000174  2F3C 004DBD16            113      move.l #INITIAL_BUTTERFREE_TOP_LEFT_X,-(sp)
+Line 114 ERROR: Undefined symbol
+0000017A  2F3C 004DBD16            114      move.l #INITIAL_BUTTERFREE_TOP_LEFT_Y,-(sp)
+Line 115 ERROR: Undefined symbol
+00000180  4EB9 004DBD16            115      jsr DisplayImage
+Line 116 ERROR: Undefined symbol
+00000186  DFFC 004DBD16            116      add.l #SIZE_DISPLAY_PARAMETERS_DATA,sp
+0000018C                           117      
+Line 118 ERROR: Undefined symbol
+0000018C  2A3C 004DBD16            118      move.l #INITIAL_BUTTERFREE_TOP_LEFT_X,d5
+Line 119 ERROR: Undefined symbol
+00000192  2C3C 004DBD16            119      move.l #INITIAL_BUTTERFREE_TOP_LEFT_Y,d6
+Line 120 ERROR: Undefined symbol
+00000198  ED8D                     120      lsl.l #FRAC_BITS,d5
+Line 121 ERROR: Undefined symbol
+0000019A  ED8E                     121      lsl.l #FRAC_BITS,d6
+Line 122 ERROR: Undefined symbol
+0000019C  4EB9 004DBD16            122      jsr    DisplayBuffer
+000001A2                           123     
+000001A2                           124      ; Draw Score
+Line 125 ERROR: Undefined symbol
+000001A2                           125      movem.l REG_7SEGMENT_LED,-(sp)             
+Line 126 ERROR: Undefined symbol
+000001A2  2C39 004DBD16            126      move.l  Score,d6                                    
+Line 127 ERROR: Undefined symbol
+000001A8  23FC 004DBD16 005455B8   127      move.l  #SCORE_X,Number_Position_X
+Line 128 ERROR: Undefined symbol
+000001B2  23FC 004DBD16 005455B8   128      move.l  #SCORE_Y,Number_Position_Y
+Line 129 ERROR: Undefined symbol
+000001BC  4EB9 004DBD16            129      jsr     Display7Segment      
+Line 130 ERROR: Undefined symbol
+000001C2                           130      movem.l (sp)+,REG_7SEGMENT_LED            
+Line 131 ERROR: Undefined symbol
+000001C2  4EB9 004DBD16            131      jsr    DisplayBuffer
+000001C8  4E75                     132      rts
+000001CA                           133  
+000001CA                           134  
+000001CA                           135  
+000001CA                           136  
+000001CA                           137  
+000001CA                           138  
+000001CA                           139  
+000001CA                           140  
+000001CA                           141  
+000001CA                           142  
+000001CA                           143  
+000001CA                           144  
+Line 145 WARNING: END directive missing, starting address not set
+
+73 errors detected
+1 warning generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+DONTENTERGAME       9C
+INITIALGAME         0

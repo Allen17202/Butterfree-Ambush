@@ -1,0 +1,67 @@
+00001000 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.16.01
+Created On: 10/20/2022 1:37:06 PM
+
+00000000                             1  *-----------------------------------------------------------
+00000000                             2  * Title      :
+00000000                             3  * Written by :
+00000000                             4  * Date       :
+00000000                             5  * Description:
+00000000                             6  *-----------------------------------------------------------
+00000000                             7  HandlePlayerInput:        
+Line 8 ERROR: Undefined symbol
+00000000  223C 004DBD16              8          move.l  #SPACEBAR_KEY,d1
+Line 9 ERROR: Undefined symbol
+00000006  203C 004DBD16              9          move.l  #KEY_INPUT_TRAP,d0
+0000000C  4E4F                      10          TRAP    #15
+0000000E  0281 000000FF             11          andi.l  #$FF,d1                                 ;Check for key press. $FF = Key pressed. $00 = Key not pressed
+00000014  6700 0024                 12          beq     CHECK_DOWN_KEY_INPUT                    ;If Up arrow key is not pressed, then check for Down arrow key
+Line 13 ERROR: Undefined symbol
+00000018  4EB9 004DBD16             13          jsr     CoverButterfreeImage
+Line 14 ERROR: Undefined symbol
+0000001E  0486 004DBD16             14          subi.l  #BUTTERFREE_VELOCITY,d6                  ;Decrement the Y co-ordinate
+00000024                            15                  
+Line 16 ERROR: Undefined symbol
+00000024  0C86 004DBD16             16          cmpi.l  #BUTTERFREE_MAX_TOP,d6                   ;Check if the Crosshair's Y co-ordinate has reached the top of the screen
+0000002A  6C00 0008                 17          bge     SKIPMAXUP                               ;If not, then skip it
+0000002E                            18          
+Line 19 ERROR: Undefined symbol
+0000002E  2C3C 004DBD16             19          move.l  #BUTTERFREE_MAX_TOP,d6                   ;If yes, then move the Screen's top Y co-ordinate(which is 0) to the Y position of Crosshair and display it
+00000034                            20  SKIPMAXUP:        
+Line 21 ERROR: Undefined symbol
+00000034  4EB9 004DBD16             21          jsr     DrawButterfree                        ;Display the Crosshair
+0000003A                            22  
+0000003A                            23  
+0000003A                            24  CHECK_DOWN_KEY_INPUT: 
+Line 25 ERROR: Undefined symbol
+0000003A  4EB9 004DBD16             25          jsr      CoverButterfreeImage
+Line 26 ERROR: Undefined symbol
+00000040  0686 004DBD16             26          addi.l  #GRAVITY,d6                  ;Increment the Y co-ordinate
+00000046                            27          
+Line 28 ERROR: Undefined symbol
+00000046  0C86 004DBD16             28          cmpi.l  #BUTTERFREE_MAX_BOTTOM,d6                  ;Check if the Crosshair's Y co-ordinate has reached the bottom of the screen
+0000004C  6F00 0008                 29          ble     SKIPMAXDOWN                             ;If not, then skip it
+Line 30 ERROR: Invalid syntax
+00000050                            30          move.l  #(BUTTERFREE_MAX_BOTTOM+GRAVITY),d6                  ;If yes, then move the Crosshair's max Y co-ordinate(which is ScreenHeight-CrosshairHeight in Hex) to the Y position of Crosshair and display it
+Line 31 ERROR: Symbol value differs between first and second pass
+00000050                            31  SKIPMAXDOWN:                
+Line 32 ERROR: Undefined symbol
+00000050  4EB9 004DBD16             32          jsr     DrawButterfree                        ;Display the Crosshair
+Line 33 ERROR: Symbol value differs between first and second pass
+00000056                            33  EXITPLAYERINPUT:
+00000056  4E75                      34          rts
+00000058                            35  
+Line 36 WARNING: END directive missing, starting address not set
+
+14 errors detected
+1 warning generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+CHECK_DOWN_KEY_INPUT  3A
+EXITPLAYERINPUT     5C
+HANDLEPLAYERINPUT   0
+SKIPMAXDOWN         56
+SKIPMAXUP           34
